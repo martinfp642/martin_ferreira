@@ -1,11 +1,11 @@
 # Replace the text below to customize your site
 site_name: Nombre Estudiante - UTEC & Fab Lab Barcelona & Fab Lab Esan
 site_description: Master in Design for Emergent Futures
-site_author: Nombre Estudiante
-copyright: Copyleft 2024 "Nombre Estudiante" - GNU Free Documentation License
+site_author: Martin Ferreira
+copyright: Copyleft 2024 "Martin Ferreira" - GNU Free Documentation License
 repo_name: "Name : Github Repo"
-site_url: https://mathira.github.io/efdi-template/
-repo_url: https://github.com/mathira/efdi-template
+site_url: https://martinfp642.github.io/martin_ferreira/
+repo_url: https://github.com/martinfp642/martin_ferreira
 
 nav:
   - Home: index.md
