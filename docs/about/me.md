@@ -1,6 +1,6 @@
 # Sobre mi
 
-![](../images/hola/hola.png)
+![](../images/fotos_personales/foto_martin.png)
 
 Soy docente de Física, Ciencias y Tecnología, estudiante de Ingeniería Eléctrica y Referente STEM del Colegio y Liceo Hans Christian Andersen, con más de una década de experiencia trabajando en la intersección entre la educación, la ciencia y la tecnología.
 
