@@ -36,7 +36,7 @@ Diseño soportes, adaptadores y accesorios para los experimentos. En **Piezas 3D
 Hemos dictado talleres para docentes en distintas instancias, actualmente estamos dictando talleres con Ceibal en el marco de la creación de un grupo de docentes motivados con el uso de la placa micro:bit para la experimentación con física.
 
 <figure markdown>
-  ![Taller Física práctica con micro:bit en el ENPF 2025](images/welcome/fisicasimple-enpf.jpg)
+  ![Taller Física práctica con micro:bit en el ENPF 2025](images/welcome/fisicasimple-taller.jpgfisicasimple-taller)
   <figcaption>Taller "Física práctica con micro:bit" en el XXXV ENPF (La Paloma, 2025): masa-resorte, velocidad angular y campo magnético.</figcaption>
 </figure>
 
