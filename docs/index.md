@@ -2,4 +2,6 @@
 
 ![](../images/perezoso.jpg)
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+fisicabit.com es un proyecto personal orientado a crear y compartir materiales open source para la enseñanza experimental de la Física. La propuesta busca explorar cómo la fabricación digital, el diseño de piezas y dispositivos, y el uso de placas programables como micro:bit pueden ayudar a equipar laboratorios de forma accesible, flexible y replicable.
+
+La idea es ir más allá de las actividades aisladas y construir, poco a poco, una colección de recursos, instrumentos, diseños y experiencias que puedan ser fabricados, modificados y reutilizados por docentes y estudiantes.
