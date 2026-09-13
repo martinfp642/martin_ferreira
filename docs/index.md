@@ -12,62 +12,36 @@ Pablo Godoy: **fisicabit.com** y **Física Simple**.
 
 ## fisicabit.com — laboratorio de Física en el navegador
 
-<div class="grid cards" markdown>
 
-<figure markdown>
-  ![LAB de fisicabit.com capturando datos por Bluetooth](images/welcome/fisicabit-lab.png)
-  <figcaption>El LAB principal: la micro:bit envía datos por Bluetooth o USB y la gráfica se arma en tiempo real.</figcaption>
-</figure>
+Junto con **Pablo Godoy** desarrollo [fisicabit.com](https://fisicabit.com/): una plataforma para registrar datos con **micro:bit**, graficarlos y analizarlos desde el navegador. Mi objetivo es ampliar este proyecto con **material abierto y fabricación digital** para equipar laboratorios con recursos accesibles y adaptables.
 
-<figure markdown>
-  ![Ajuste de curva sobre datos de un capacitor](images/welcome/fisicabit-ajuste.png)
-  <figcaption>Ajuste por mínimos cuadrados: carga y descarga de un capacitor detectadas y ajustadas por tramos.</figcaption>
-</figure>
+### Una práctica sencilla a modo de ejemplo: luz y sombra
 
-<figure markdown>
-  ![Módulo MAPEO con isolíneas de un campo eléctrico](images/welcome/fisicabit-mapeo.png)
-  <figcaption>MAPEO: campo 2D interpolado, isolíneas y cortes 1D para la cuba electrolítica.</figcaption>
-</figure>
+Programamos la micro:bit para enviar su nivel de luz, la conectamos a fisicabit y cubrimos y descubrimos la matriz de LED con la mano. La gráfica permite relacionar los cambios de iluminación con el tiempo.
 
-<figure markdown>
-  ![Análisis de video de una caída libre](images/welcome/fisicabit-video.png)
-  <figcaption>Video + movimiento: se marca el objeto cuadro a cuadro y salen las gráficas de posición, velocidad y aceleración.</figcaption>
-</figure>
+![Nivel de luz en función del tiempo en fisicabit](images/welcome/fisicabit-practica-luz.jpg)
 
-<figure markdown>
-  ![Diseño de piezas 3D con OpenSCAD en el navegador](images/welcome/fisicabit-piezas3d.png)
-  <figcaption>Piezas 3D: soportes y accesorios para los experimentos, parametrizados en OpenSCAD y exportables a STL.</figcaption>
-</figure>
+*Ejemplo con datos ilustrativos. El nivel de luz se expresa en una escala de 0 a 255, no en lux.*
 
-<figure markdown>
-  ![Informe de laboratorio generado desde fisicabit](images/welcome/fisicabit-informe.png)
-  <figcaption>El informe se arma dentro de la página y se exporta a PDF, Word o Google Drive.</figcaption>
-</figure>
+### Del diseño a la impresión 3D
 
-</div>
+Diseño soportes, adaptadores y accesorios para los experimentos. En **Piezas 3D** podemos modificar modelos en OpenSCAD y preparar archivos STL para imprimir: por ejemplo, una polea ajustando su diámetro, espesor y agujero para el eje.
 
-> Plataforma gratuita, licencia CC BY-SA 4.0. Más de 1000 docentes y 36 experimentos.
-> 👉 [fisicabit.com](https://fisicabit.com)
+![Código y parámetros de una polea en fisicabit](images/welcome/fisicabit-piezas3d.jpg)
 
-## Física Simple — talleres y comunidad
+*Diseño paramétrico: adaptar una pieza a las necesidades de cada práctica.*
 
-<div class="grid cards" markdown>
+## Formaciones
 
-<figure markdown>
-  ![Logo de Física Simple](images/welcome/fisicasimple-logo.png)
-  <figcaption>Física Simple, el proyecto de divulgación y formación docente que llevamos adelante con Pablo Godoy.</figcaption>
-</figure>
+Hemos dictado talleres para docentes en distintas instancias, actualmente estamos dictando talleres con Ceibal en el marco de la creación de un grupo de docentes motivados con el uso de la placa micro:bit para la experimentación con física.
 
 <figure markdown>
   ![Taller Física práctica con micro:bit en el ENPF 2025](images/welcome/fisicasimple-enpf.jpg)
   <figcaption>Taller "Física práctica con micro:bit" en el XXXV ENPF (La Paloma, 2025): masa-resorte, velocidad angular y campo magnético.</figcaption>
 </figure>
 
-<figure markdown>
-  ![Docentes trabajando con micro:bit en un taller](images/welcome/fisicasimple-taller.jpg)
-  <figcaption>Más de 60 docentes formados en cuatro talleres en Uruguay.</figcaption>
-</figure>
 
-</div>
+Para más novedades podés seguirnos en las redes:
+
 
 > Seguinos en [@fisicasimpleuy](https://www.instagram.com/fisicasimpleuy)
