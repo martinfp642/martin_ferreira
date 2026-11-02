@@ -771,11 +771,17 @@
     if (t) { $("be-token").value = t; connect(t); }
   }
 
+  // Arranque. Con la carga instantánea del tema, la página cambia sin
+  // recargar: se vuelve a intentar cada medio segundo y init() no hace
+  // nada si el editor no está en la página o ya se inicializó.
   if (window.document$ && typeof window.document$.subscribe === "function") {
     window.document$.subscribe(init);
   } else if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", init);
   } else {
     init();
+  }
+  if (!window.__bitacoraEditorPoll) {
+    window.__bitacoraEditorPoll = setInterval(init, 500);
   }
 })();
