@@ -1715,3 +1715,244 @@ body.be-fullscreen-body {
     grid-template-columns: 1fr;
   }
 }
+
+/* =====================================================================
+   Editor: usabilidad (pestañas, pasos, bloques plegables, arrastre)
+   ===================================================================== */
+.be-toolbar {
+  gap: 0.35rem;
+}
+
+.be .be-toolbar button[data-panel] {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.35em 0.8em 0.35em 0.35em;
+}
+
+.be .be-toolbar button[data-panel] .bc-ico {
+  width: 1.4rem;
+  height: 1.4rem;
+  font-size: 0.7rem;
+}
+
+.be .be-toolbar button[data-panel][aria-pressed="true"] .bc-ico,
+.be .be-toolbar button[data-panel]:hover .bc-ico {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.be .be-toolbar button.be-status {
+  margin-left: auto;
+  font-weight: 700;
+  color: var(--ink);
+  background: var(--paper);
+}
+
+.be .be-toolbar button.be-status.on {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.bc-paso {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 1.4rem 0 0.8rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 2px solid var(--line);
+}
+
+.bc-paso .bc-num {
+  width: 1.7rem;
+  height: 1.7rem;
+  background: var(--ink);
+  color: var(--paper);
+  font-size: 0.8rem;
+}
+
+.bc-paso small {
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 0.64rem;
+  margin-left: 0.3rem;
+}
+
+.bc-paleta {
+  position: sticky;
+  top: 2.5rem;
+  z-index: 5;
+  background: var(--paper);
+  border-top: 0;
+}
+
+.bc-bloque-head {
+  cursor: grab;
+  user-select: none;
+}
+
+.bc-bloque-head:active {
+  cursor: grabbing;
+}
+
+.bc-resumen {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.6rem;
+  opacity: 0.8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bc-bloque.plegado .bc-bloque-head {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.bc-bloque.plegado .bc-num {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.be .bc-bloque.plegado .bc-bloque-btns button {
+  background: var(--paper);
+  color: var(--ink);
+  border-color: var(--line);
+}
+
+.be .bc-bloque.plegado .bc-bloque-btns button:hover {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.bc-bloque.arrastrando {
+  opacity: 0.4;
+}
+
+.bc-bloque.destino {
+  outline: 3px dashed var(--line);
+  outline-offset: 3px;
+}
+
+.bc-bloque-foot {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-top: 1px solid var(--line-soft);
+  padding: 0.5rem 0.9rem;
+  background: var(--panel);
+}
+
+.bc-foot-label {
+  font-size: 0.55rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.be .bc-bloque-foot select {
+  width: auto;
+  font-size: 0.64rem;
+  padding: 0.35em 0.5em;
+}
+
+.be .bc-bloque-foot button {
+  margin-left: auto;
+}
+
+.bc-previa-titulo {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.be .bc-previa-titulo button {
+  margin-left: auto;
+}
+
+.bc-work.sin-previa {
+  grid-template-columns: 1fr;
+}
+
+.bc-work.sin-previa .bc-previa .be-preview {
+  display: none;
+}
+
+.bc-work.sin-previa .bc-previa {
+  position: static;
+}
+
+.bc-acciones {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  background: var(--paper);
+  border-top: 2px solid var(--line);
+  border-bottom: 2px solid var(--line);
+  padding: 0.6rem 0;
+  margin-bottom: 0.8rem;
+}
+
+.bc-acciones .be-log {
+  margin: 0.6rem 0 0;
+}
+
+.bc-contador {
+  align-self: center;
+  margin-left: auto;
+  font-size: 0.58rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+@media (max-width: 59.9375em) {
+  .bc-paleta {
+    position: static;
+  }
+}
+
+/* En la página del editor no hay tabla de contenidos: el contenido usa todo el ancho */
+@media screen and (min-width: 60em) {
+  body.be-page .md-sidebar--secondary {
+    display: none;
+  }
+  body.be-page .md-content {
+    margin-right: 0;
+  }
+}
+
+.bc-tipo {
+  white-space: nowrap;
+}
+
+.bc-bloque-btns {
+  flex-shrink: 0;
+}
+
+/* La cabecera del bloque no aplasta el resumen: envuelve los botones si falta ancho */
+.bc-bloque-head {
+  flex-wrap: wrap;
+}
+
+.bc-resumen {
+  flex: 1 1 2rem;
+  min-width: 2rem;
+}
+
+.be .bc-bloque-btns button {
+  width: 1.5rem;
+}
+
+/* La página del editor es más ancha que el resto del sitio */
+@media screen and (min-width: 76.25em) {
+  body.be-page .md-grid {
+    max-width: 92rem;
+  }
+}

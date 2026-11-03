@@ -499,6 +499,7 @@
   /* ------------------------------------------------------------------ */
   function init() {
     var root = $("bitacora-editor");
+    if (document.body) document.body.classList.toggle("be-page", !!root);
     if (!root || root.dataset.ready) return;
     root.dataset.ready = "1";
 
@@ -536,6 +537,11 @@
       s.textContent = txt;
       s.classList.toggle("on", !!on);
     }
+
+    $("be-status").addEventListener("click", function () {
+      root.querySelector('.be-toolbar [data-panel="cuenta"]').click();
+      $("be-token").focus();
+    });
 
     /* --- token --- */
     function storedToken() {

@@ -141,7 +141,7 @@
     function add(type, extra, silent) {
       var d = TIPOS[type].data();
       Object.keys(extra || {}).forEach(function (k) { d[k] = extra[k]; });
-      var b = { id: uid(), type: type, data: d };
+      var b = { id: uid(), type: type, data: d, open: true };
       blocks.push(b);
       if (!silent) { render(); focusBlock(b.id); changed(); }
       return b;
@@ -156,10 +156,10 @@
       focusBlock(id);
     }
     function focusBlock(id) {
-      var el = root.querySelector('[data-id="' + id + '"]');
-      if (!el) return;
-      el.scrollIntoView({ behavior: "smooth", block: "center" });
-      var f = el.querySelector("input, textarea");
+      var card = root.querySelector('[data-id="' + id + '"]');
+      if (!card) return;
+      card.scrollIntoView({ behavior: "smooth", block: "center" });
+      var f = card.querySelector(".bc-form input, .bc-form textarea");
       if (f) f.focus({ preventScroll: true });
     }
 
@@ -411,25 +411,105 @@
       return w;
     }
 
+    function resumen(b) {
+      var d = b.data, n;
+      switch (b.type) {
+        case "titulo": return d.text || "(sin texto)";
+        case "texto": return d.text ? d.text.replace(/\s+/g, " ").slice(0, 80) + (d.text.length > 80 ? "…" : "") : "(vacío)";
+        case "imagen": case "hero": return d.imgs[0] ? (d.imgs[0].caption || d.imgs[0].name) : "(sin foto)";
+        case "carrete": case "galeria": n = d.imgs.length; return n ? n + (n === 1 ? " foto" : " fotos") : "(sin fotos)";
+        case "comparar": return (d.a || "Antes") + " / " + (d.b || "Después") + " · " + d.imgs.length + " de 2 fotos";
+        case "datos": case "linea": n = d.rows.filter(function (r) { return r.k.trim() && r.v.trim(); }).length; return n + (n === 1 ? " fila" : " filas");
+        case "parametros": n = d.rows.filter(function (r) { return r.some(function (c) { return c.trim(); }); }).length; return d.cols.join(" · ") + " · " + n + (n === 1 ? " fila" : " filas");
+        case "resultado": return (d.ok ? "Éxito · " : "Falló · ") + (d.text ? d.text.slice(0, 60) : "(vacío)");
+        case "nota": return d.titulo + (d.text ? " · " + d.text.slice(0, 50) : "");
+        case "video": return d.url || "(sin dirección)";
+        case "codigo": return (d.lang || "código") + (d.text ? " · " + d.text.split("\n").length + " líneas" : " · (vacío)");
+        case "archivos": n = d.files.length; return n ? n + (n === 1 ? " archivo" : " archivos") : "(sin archivos)";
+      }
+      return "";
+    }
+
+    function duplicate(id) {
+      var i = blocks.findIndex(function (b) { return b.id === id; });
+      if (i < 0) return;
+      var src = blocks[i];
+      var copy = { id: uid(), type: src.type, data: JSON.parse(JSON.stringify(src.data, function (k, v) { return k === "bytes" || k === "url" ? undefined : v; })) };
+      (copy.data.imgs || []).forEach(function (im, k) { im.id = uid(); im.bytes = src.data.imgs[k].bytes; im.url = src.data.imgs[k].url; im.type = src.data.imgs[k].type; });
+      (copy.data.files || []).forEach(function (f, k) { f.id = uid(); f.bytes = src.data.files[k].bytes; });
+      copy.open = true;
+      blocks.splice(i + 1, 0, copy);
+      render(); changed(); focusBlock(copy.id);
+    }
+
+    function addAfter(id, type) {
+      var i = blocks.findIndex(function (b) { return b.id === id; });
+      var b = { id: uid(), type: type, data: TIPOS[type].data(), open: true };
+      blocks.splice(i + 1, 0, b);
+      render(); changed(); focusBlock(b.id);
+    }
+
+    var dragId = null;
     function render() {
       var box = $("bc-bloques");
       box.innerHTML = "";
+      updateCounter();
       if (!blocks.length) { box.appendChild(el("p", "be-kv bc-vacio", "Todavía no hay elementos. Elegí uno arriba, o empezá con una estructura.")); return; }
       blocks.forEach(function (b, i) {
-        var card = el("div", "bc-bloque"); card.dataset.id = b.id;
+        if (b.open == null) b.open = true;
+        var card = el("div", "bc-bloque" + (b.open ? "" : " plegado")); card.dataset.id = b.id;
         var head = el("div", "bc-bloque-head");
+        head.draggable = true;
+        head.title = "Clic: plegar o desplegar · arrastrar: mover";
         head.appendChild(el("span", "bc-num", String(i + 1)));
         head.appendChild(el("span", "bc-tipo", TIPOS[b.type].nombre));
+        var sum = el("span", "bc-resumen"); sum.textContent = resumen(b); head.appendChild(sum);
         var btns = el("span", "bc-bloque-btns");
-        var up = el("button", "small", "↑"); up.type = "button"; up.title = "Subir"; up.addEventListener("click", function () { move(b.id, -1); });
-        var dn = el("button", "small", "↓"); dn.type = "button"; dn.title = "Bajar"; dn.addEventListener("click", function () { move(b.id, 1); });
-        var rm = el("button", "small", "×"); rm.type = "button"; rm.title = "Quitar"; rm.addEventListener("click", function () { remove(b.id); });
-        btns.appendChild(up); btns.appendChild(dn); btns.appendChild(rm);
+        var up = el("button", "small", "↑"); up.type = "button"; up.title = "Subir"; up.addEventListener("click", function (e) { e.stopPropagation(); move(b.id, -1); });
+        var dn = el("button", "small", "↓"); dn.type = "button"; dn.title = "Bajar"; dn.addEventListener("click", function (e) { e.stopPropagation(); move(b.id, 1); });
+        var dup = el("button", "small", "⧉"); dup.type = "button"; dup.title = "Duplicar"; dup.addEventListener("click", function (e) { e.stopPropagation(); duplicate(b.id); });
+        var rm = el("button", "small", "×"); rm.type = "button"; rm.title = "Quitar"; rm.addEventListener("click", function (e) { e.stopPropagation(); if (resumen(b).indexOf("(") === 0 || confirm("¿Quitar este elemento?")) remove(b.id); });
+        var tg = el("button", "small", b.open ? "▾" : "▸"); tg.type = "button"; tg.title = b.open ? "Plegar" : "Desplegar";
+        btns.appendChild(up); btns.appendChild(dn); btns.appendChild(dup); btns.appendChild(rm); btns.appendChild(tg);
         head.appendChild(btns);
+        head.addEventListener("click", function () { b.open = !b.open; render(); });
+        head.addEventListener("dragstart", function (e) { dragId = b.id; card.classList.add("arrastrando"); e.dataTransfer.effectAllowed = "move"; try { e.dataTransfer.setData("text/plain", b.id); } catch (x) { /* nada */ } });
+        head.addEventListener("dragend", function () { dragId = null; render(); });
+        card.addEventListener("dragover", function (e) { if (!dragId || dragId === b.id) return; e.preventDefault(); card.classList.add("destino"); });
+        card.addEventListener("dragleave", function () { card.classList.remove("destino"); });
+        card.addEventListener("drop", function (e) {
+          e.preventDefault(); card.classList.remove("destino");
+          if (!dragId || dragId === b.id) return;
+          var from = blocks.findIndex(function (x) { return x.id === dragId; });
+          var moved = blocks.splice(from, 1)[0];
+          var to = blocks.findIndex(function (x) { return x.id === b.id; });
+          blocks.splice(to + (from < to ? 1 : 0), 0, moved);
+          dragId = null; render(); changed();
+        });
         card.appendChild(head);
-        card.appendChild(form(b));
+        if (b.open) {
+          card.appendChild(form(b));
+          var foot = el("div", "bc-bloque-foot");
+          var lab = el("span", "bc-foot-label", "Agregar debajo");
+          var sel = el("select");
+          sel.appendChild(el("option", null, "Elegir elemento…"));
+          Object.keys(TIPOS).forEach(function (t) { var o = el("option"); o.value = t; o.textContent = TIPOS[t].nombre; sel.appendChild(o); });
+          sel.addEventListener("change", function () { if (sel.value) addAfter(b.id, sel.value); });
+          foot.appendChild(lab); foot.appendChild(sel);
+          var plegar = el("button", "small", "Plegar"); plegar.type = "button"; plegar.addEventListener("click", function () { b.open = false; render(); });
+          foot.appendChild(plegar);
+          card.appendChild(foot);
+        }
         box.appendChild(card);
       });
+    }
+
+    function updateCounter() {
+      var c = $("bc-contador");
+      if (!c) return;
+      var fotos = 0, archivos = 0;
+      blocks.forEach(function (b) { fotos += (b.data.imgs || []).length; archivos += (b.data.files || []).length; });
+      c.textContent = blocks.length + (blocks.length === 1 ? " elemento" : " elementos") + " · " + fotos + (fotos === 1 ? " foto" : " fotos") + (archivos ? " · " + archivos + (archivos === 1 ? " archivo" : " archivos") : "");
     }
 
     /* --- Markdown --- */
@@ -512,7 +592,7 @@
             else if (k === "files") d.files = b.data.files.map(function (f) { return f.url ? { name: f.name, desc: f.desc || "", url: f.url } : { name: f.name, desc: f.desc || "", repoPath: fileRepoPath(f) }; });
             else d[k] = b.data[k];
           });
-          return { type: b.type, data: d };
+          return { type: b.type, data: d, open: b.open !== false };
         })
       };
     }
@@ -531,7 +611,13 @@
     }
     function changed() {
       clearTimeout(previewTimer);
-      previewTimer = setTimeout(function () { renderPreview(); saveDraft(); }, 350);
+      previewTimer = setTimeout(function () {
+        renderPreview(); saveDraft(); updateCounter();
+        blocks.forEach(function (b) {
+          var card = root.querySelector('[data-id="' + b.id + '"] .bc-resumen');
+          if (card) card.textContent = resumen(b);
+        });
+      }, 350);
     }
 
     /* --- borrador --- */
@@ -567,6 +653,7 @@
       (d.bloques || []).forEach(function (bb) {
         if (!TIPOS[bb.type]) return;
         var b = add(bb.type, {}, true);
+        b.open = bb.open !== false;
         Object.keys(bb.data).forEach(function (k) {
           if (k === "imgs") {
             b.data.imgs = bb.data.imgs.map(function (im) {
@@ -618,7 +705,7 @@
       var g = group();
       if (!g.name) { log("Poné el nombre de la sección nueva.", true); return; }
       var path = pagePath();
-      var btn = this; btn.disabled = true;
+      var btn = this; btn.disabled = true; btn.textContent = "Publicando…";
       log("Revisando el repositorio…");
       B.loadNav().then(function () { return B.gh.exists(path); }).then(function (exists) {
         if (exists && !ORIGEN && !confirm("Ya existe " + path + ". ¿La reemplazo?")) throw new Error("Cancelado.");
@@ -641,7 +728,7 @@
         idbClear(); saveDraft(); render();
         log("Publicado en el commit " + c.sha.slice(0, 7) + ". GitHub Actions reconstruye el sitio en uno o dos minutos.\n→ " + B.pageUrl(B.cfg.site, path) + "\n→ https://github.com/" + B.cfg.owner + "/" + B.cfg.repo + "/actions");
         B.reloadTree();
-      }).catch(function (e) { log("No se publicó: " + e.message, true); }).then(function () { btn.disabled = false; });
+      }).catch(function (e) { log("No se publicó: " + e.message, true); }).then(function () { btn.disabled = false; btn.textContent = "Publicar en el sitio"; });
     });
 
     window.BitacoraConstructor = {
@@ -652,6 +739,13 @@
         log("Página cargada desde el repositorio. Las fotos que ya están subidas no hace falta volver a cargarlas.");
       }
     };
+
+    $("bc-previa-toggle").addEventListener("click", function () {
+      var off = $("bc-work").classList.toggle("sin-previa");
+      this.textContent = off ? "Mostrar" : "Ocultar";
+      try { localStorage.setItem("bitacora.previa", off ? "0" : "1"); } catch (e) { /* nada */ }
+    });
+    try { if (localStorage.getItem("bitacora.previa") === "0") { $("bc-work").classList.add("sin-previa"); $("bc-previa-toggle").textContent = "Mostrar"; } } catch (e) { /* nada */ }
 
     updateRuta();
     restoreDraft();
