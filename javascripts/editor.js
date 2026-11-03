@@ -932,6 +932,7 @@
     function openFile(p, text, sha, nuevo) {
       editFile = { path: p, sha: sha || null, nuevo: !!nuevo };
       $("be-contenido").value = text;
+      $("be-al-constructor").style.display = /<!-- bloques:/.test(text) ? "inline-block" : "none";
       $("be-mensaje").value = (nuevo ? "Nueva página: " : "Edito ") + p.replace(/^docs\//, "");
       if (/^docs\/.*\.md$/.test(p)) {
         $("be-ver").href = pageUrl(cfg.site, p); $("be-ver").style.display = nuevo ? "none" : "inline-block";
@@ -1115,6 +1116,42 @@
     // Sin token igual se puede explorar: el repositorio es público
     loadTree();
     loadNav().catch(function () { /* sin red: quedan las secciones conocidas */ });
+
+    /* --- puente con el constructor (constructor.js) --- */
+    function openNewText(path, text, group, titulo) {
+      root.querySelector('.be-toolbar [data-panel="editar"]').click();
+      editFile = null; $("be-archivo").value = "";
+      openFile(path, text, null, true);
+      editFile.group = group; editFile.titulo = titulo;
+      log("be-log2", "Página lista para retocar. Guardá cuando termines.");
+    }
+    $("be-contenido").addEventListener("input", function () {
+      $("be-al-constructor").style.display = /<!-- bloques:/.test(this.value) ? "inline-block" : "none";
+    });
+    $("be-archivo").addEventListener("change", function () {
+      setTimeout(function () { $("be-al-constructor").style.display = /<!-- bloques:/.test($("be-contenido").value) ? "inline-block" : "none"; }, 1500);
+    });
+    $("be-al-constructor").addEventListener("click", function () {
+      var m = $("be-contenido").value.match(/<!-- bloques:([A-Za-z0-9+/=]+) -->/);
+      if (!m || !window.BitacoraConstructor) return;
+      try {
+        var json = JSON.parse(b64ToUtf8(m[1]));
+        window.BitacoraConstructor.load(json, editFile ? editFile.path : null);
+        root.querySelector('.be-toolbar [data-panel="armar"]').click();
+      } catch (e) { log("be-log2", "No pude leer los bloques: " + e.message, true); }
+    });
+
+    window.Bitacora = {
+      cfg: cfg, gh: gh, root: root,
+      groups: function () { return groups; },
+      loadNav: loadNav,
+      navYaml: function () { return navYaml; },
+      clearNav: function () { navYaml = null; },
+      processImage: processImage, slugify: slugify, today: today, yamlQuote: yamlQuote,
+      escapeHtml: escapeHtml, renderMd: renderMd, pageUrl: pageUrl, navInsert: navInsert,
+      relToImages: relToImages, fmtSize: fmtSize, utf8ToB64: utf8ToB64, b64ToUtf8: b64ToUtf8,
+      openNewText: openNewText, reloadTree: loadTree
+    };
 
     /* --- arranque --- */
     var t = storedToken();

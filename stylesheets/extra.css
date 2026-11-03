@@ -1499,3 +1499,199 @@ body.be-fullscreen-body {
 .be-preview .carrete img {
   height: 14rem;
 }
+
+/* =====================================================================
+   Armar página: constructor por elementos
+   ===================================================================== */
+.bc-paleta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+  border-top: 2px solid var(--line);
+  border-bottom: 2px solid var(--line);
+  padding: 0.7rem 0;
+  margin: 0.4rem 0 0.6rem;
+}
+
+.bc-paleta-titulo {
+  font-size: 0.55rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  margin-right: 0.5rem;
+  width: 100%;
+}
+
+.be .bc-paleta button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.56rem;
+  padding: 0.4em 0.7em 0.4em 0.4em;
+  background: var(--paper);
+}
+
+.be .bc-paleta button:hover .bc-ico {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.bc-ico {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  background: var(--ink);
+  color: var(--paper);
+  font-weight: 800;
+  font-size: 0.75rem;
+  letter-spacing: 0;
+}
+
+.bc-work {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.2rem;
+  margin: 0.6rem 0 1.2rem;
+}
+
+@media (min-width: 60em) {
+  .bc-work {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: start;
+  }
+}
+
+.bc-previa {
+  position: sticky;
+  top: 4rem;
+}
+
+.bc-previa-titulo {
+  font-size: 0.55rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  margin-bottom: 0.3rem;
+}
+
+.bc-previa .be-preview,
+.be .bc-previa .be-preview {
+  margin: 0;
+  max-height: calc(100vh - 7rem);
+  overflow: auto;
+  padding: 1rem 1.2rem;
+}
+
+.bc-bloque {
+  border: 2px solid var(--line);
+  margin: 0 0 0.8rem;
+  background: var(--paper);
+}
+
+.bc-bloque-head {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: var(--ink);
+  color: var(--paper);
+  padding: 0.35rem 0.5rem 0.35rem 0.4rem;
+}
+
+.bc-num {
+  display: inline-flex;
+  width: 1.4rem;
+  height: 1.4rem;
+  align-items: center;
+  justify-content: center;
+  background: var(--paper);
+  color: var(--ink);
+  font-weight: 800;
+  font-size: 0.65rem;
+}
+
+.bc-tipo {
+  font-size: 0.6rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.bc-bloque-btns {
+  margin-left: auto;
+  display: flex;
+  gap: 0.25rem;
+}
+
+.be .bc-bloque-btns button {
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--paper);
+  width: 1.6rem;
+  padding: 0.3em 0;
+}
+
+.be .bc-bloque-btns button:hover {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.bc-form {
+  padding: 0.8rem 0.9rem 0.3rem;
+}
+
+.bc-form .be-field {
+  margin-bottom: 0.8rem;
+}
+
+.bc-rows .bc-row {
+  display: grid;
+  grid-template-columns: 1fr 2fr auto;
+  gap: 0.4rem;
+  margin-bottom: 0.4rem;
+  align-items: center;
+}
+
+.bc-rows .bc-row-3 {
+  grid-template-columns: 1fr 1fr 1fr auto;
+}
+
+.bc-rows > button {
+  margin: 0.2rem 0 0.8rem;
+}
+
+.bc-filename {
+  font-size: 0.66rem;
+  font-weight: 700;
+  word-break: break-all;
+}
+
+.bc-imgs .be-images {
+  margin-bottom: 0.5rem;
+}
+
+.bc-imgs .be-drop,
+.bc-files .be-drop {
+  margin-bottom: 0.8rem;
+  padding: 0.8rem;
+}
+
+.bc-imgbtns {
+  display: flex;
+  gap: 0.25rem;
+  margin-top: 0.3rem;
+}
+
+.be .bc-imgbtns button {
+  flex: 1;
+  margin: 0;
+  padding: 0.3em 0;
+}
+
+.bc-vacio {
+  border: 2px dashed var(--line);
+  padding: 1.5rem;
+  text-align: center;
+}

@@ -504,15 +504,86 @@
 <div id="bitacora-editor" class="be" data-owner="martinfp642" data-repo="martin_ferreira" data-branch="main" data-site="https://martinfp642.github.io/martin_ferreira/">
 
 <div class="be-toolbar">
-  <button type="button" data-panel="nueva" aria-pressed="true">Nueva entrada</button>
+  <button type="button" data-panel="armar" aria-pressed="true">Armar página</button>
+  <button type="button" data-panel="nueva">Formulario</button>
   <button type="button" data-panel="editar">Editar archivo</button>
   <button type="button" data-panel="cuenta">Mi cuenta</button>
   <button type="button" data-panel="ayuda">Ayuda</button>
   <span class="be-status" id="be-status">Sin conexión</span>
 </div>
 
+<!-- ============================ ARMAR PÁGINA ============================ -->
+<section class="be-panel active" data-panel="armar">
+<div id="be-constructor">
+
+<div class="be-row">
+  <div class="be-field">
+    <label for="bc-titulo">Título de la página</label>
+    <input type="text" id="bc-titulo" placeholder="Ej.: MT02 · Corte láser">
+  </div>
+  <div class="be-field">
+    <label for="bc-seccion">Sección <small>Dónde aparece en el menú</small></label>
+    <select id="bc-seccion"></select>
+    <input type="text" id="bc-seccion-nueva" placeholder="Nombre de la sección nueva" style="display:none;margin-top:.4rem">
+  </div>
+  <div class="be-field">
+    <label for="bc-semana">Semana · fecha <small>Se muestra debajo del título</small></label>
+    <input type="text" id="bc-semana" placeholder="Semana 3 · 2025-11-10">
+    <span class="hint be-kv" id="bc-ruta"></span>
+  </div>
+</div>
+
+<div class="bc-paleta" id="bc-paleta">
+  <span class="bc-paleta-titulo">Agregar elemento</span>
+  <button type="button" data-add="titulo"><span class="bc-ico">H</span>Título</button>
+  <button type="button" data-add="texto"><span class="bc-ico">¶</span>Texto</button>
+  <button type="button" data-add="imagen"><span class="bc-ico">▣</span>Imagen</button>
+  <button type="button" data-add="carrete"><span class="bc-ico">⧉</span>Carrete</button>
+  <button type="button" data-add="galeria"><span class="bc-ico">▦</span>Galería</button>
+  <button type="button" data-add="comparar"><span class="bc-ico">◧</span>Antes / después</button>
+  <button type="button" data-add="hero"><span class="bc-ico">▬</span>Hero shot</button>
+  <button type="button" data-add="datos"><span class="bc-ico">☰</span>Ficha de datos</button>
+  <button type="button" data-add="parametros"><span class="bc-ico">⊞</span>Tabla</button>
+  <button type="button" data-add="linea"><span class="bc-ico">⋮</span>Línea de tiempo</button>
+  <button type="button" data-add="resultado"><span class="bc-ico">✓</span>Resultado</button>
+  <button type="button" data-add="nota"><span class="bc-ico">!</span>Nota</button>
+  <button type="button" data-add="video"><span class="bc-ico">▶</span>Video</button>
+  <button type="button" data-add="codigo"><span class="bc-ico">&lt;/&gt;</span>Código</button>
+  <button type="button" data-add="archivos"><span class="bc-ico">⇩</span>Archivos</button>
+</div>
+
+<div class="be-actions" style="margin:.4rem 0 1rem">
+  <button type="button" class="small" id="bc-plantilla-tec">Empezar con la estructura de Tecnología</button>
+  <button type="button" class="small" id="bc-plantilla-dis">Diseño</button>
+  <button type="button" class="small" id="bc-plantilla-inn">Innovación</button>
+  <button type="button" class="small" id="bc-plantilla-pro">Proyecto</button>
+</div>
+
+<div class="bc-work">
+  <div class="bc-bloques" id="bc-bloques">
+    <p class="be-kv bc-vacio">Todavía no hay elementos. Elegí uno arriba, o empezá con una estructura.</p>
+  </div>
+  <div class="bc-previa">
+    <div class="bc-previa-titulo">Vista previa</div>
+    <div class="be-preview md-typeset" id="bc-preview"></div>
+  </div>
+</div>
+
+<div class="be-actions">
+  <button type="button" class="primary" id="bc-publicar">Publicar en el sitio</button>
+  <button type="button" id="bc-abrir-texto">Abrir en el editor de texto</button>
+  <button type="button" id="bc-copiar">Copiar Markdown</button>
+  <button type="button" id="bc-descargar">Descargar .md</button>
+  <button type="button" id="bc-limpiar">Vaciar</button>
+</div>
+
+<div class="be-log" id="bc-log">Los elementos y las fotos se guardan en este navegador mientras trabajás.</div>
+
+</div>
+</section>
+
 <!-- ============================ NUEVA ENTRADA ============================ -->
-<section class="be-panel active" data-panel="nueva">
+<section class="be-panel" data-panel="nueva">
 
 <div class="be-row">
   <div class="be-field">
@@ -651,6 +722,7 @@
   </div>
   <div class="be-filebar-actions">
     <button type="button" class="small" id="be-nueva-pagina">+ Página nueva</button>
+    <button type="button" class="small" id="be-al-constructor" style="display:none">Abrir en Armar página</button>
     <button type="button" class="small" id="be-recargar">Actualizar lista</button>
     <a id="be-ver" class="md-button" href="#" target="_blank" rel="noopener" style="display:none">Ver en el sitio</a>
   </div>
@@ -793,6 +865,14 @@
   <li>GitHub Actions reconstruye el sitio. Tarda uno o dos minutos; el avance se ve en <a href="https://github.com/martinfp642/martin_ferreira/actions" target="_blank" rel="noopener">Actions</a>.</li>
 </ol>
 
+<h3>Armar página</h3>
+<ul>
+  <li>Elegís elementos de la paleta (título, texto, imagen, carrete, galería, antes/después, ficha, tabla, línea de tiempo, resultado, nota, video, código, archivos) y completás sus campos. Cada elemento se mueve con las flechas o se quita con ×.</li>
+  <li>Las fotos se arrastran dentro de cada elemento; el pie de foto se escribe debajo de cada una. Los archivos (.stl, .f3d, .ino…) se suben desde el elemento Archivos y quedan en <code>docs/files/</code>.</li>
+  <li>La vista previa de la derecha muestra la página tal como va a quedar. <strong>Publicar</strong> sube la página, las fotos y los archivos en un solo commit y la agrega al menú.</li>
+  <li>Una página armada así se puede volver a abrir en el constructor desde <strong>Editar archivo</strong> (botón "Abrir en Armar página").</li>
+</ul>
+
 <h3>Editor de páginas</h3>
 <ul>
   <li><strong>+ Página nueva</strong> crea una página en la sección elegida a partir de una plantilla, y al guardar la agrega al menú.</li>
@@ -822,7 +902,7 @@
 <div class="md-source-date">
   <small>
     
-      Last update: <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="November 3, 2026 01:11:30 UTC">November 3, 2026</span>
+      Last update: <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="November 3, 2026 01:26:08 UTC">November 3, 2026</span>
     
   </small>
 </div>
@@ -948,6 +1028,8 @@
         <script src="../javascripts/bitacora.js"></script>
       
         <script src="../javascripts/editor.js"></script>
+      
+        <script src="../javascripts/constructor.js"></script>
       
     
   </body>
