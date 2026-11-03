@@ -89,14 +89,138 @@
     });
   }
 
-  function renderMd(md, images) {
+  function renderMd(md, images, baseUrl) {
     return loadMarked().then(function (marked) {
       var body = md.replace(/^---[\s\S]*?---\n/, "");
       var html = marked.parse(body);
       (images || []).forEach(function (im) {
         html = html.split(im.rel).join(im.url);
       });
+      if (baseUrl) {
+        // Las rutas relativas (../images/…) se resuelven contra la página en el sitio
+        html = html.replace(/(<img[^>]*\ssrc=")([^"]+)(")/g, function (m, a, src, c) {
+          if (/^(https?:|blob:|data:|\/)/.test(src)) return m;
+          try { return a + new URL(src, baseUrl).href + c; } catch (e) { return m; }
+        });
+      }
       return html;
+    });
+  }
+
+  function pageUrl(site, path) {
+    return site + path.replace(/^docs\//, "").replace(/(^|\/)index\.md$/, "$1").replace(/\.md$/, "/");
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Barra de formato y bloques                                          */
+  /* ------------------------------------------------------------------ */
+  function selection(ta) {
+    return { s: ta.selectionStart, e: ta.selectionEnd, text: ta.value.slice(ta.selectionStart, ta.selectionEnd) };
+  }
+
+  function replaceSelection(ta, text, selStart, selEnd) {
+    var sel = selection(ta);
+    ta.value = ta.value.slice(0, sel.s) + text + ta.value.slice(sel.e);
+    ta.selectionStart = sel.s + (selStart == null ? text.length : selStart);
+    ta.selectionEnd = sel.s + (selEnd == null ? text.length : selEnd);
+    ta.focus();
+    ta.dispatchEvent(new Event("input"));
+  }
+
+  function wrap(ta, before, after, placeholder) {
+    var sel = selection(ta);
+    var inner = sel.text || placeholder;
+    replaceSelection(ta, before + inner + after, before.length, before.length + inner.length);
+  }
+
+  function linePrefix(ta, prefix, numbered) {
+    var sel = selection(ta);
+    var v = ta.value;
+    var ls = v.lastIndexOf("\n", sel.s - 1) + 1;
+    var le = v.indexOf("\n", sel.e); if (le < 0) le = v.length;
+    var lines = v.slice(ls, le).split("\n");
+    var out = lines.map(function (l, i) { return (numbered ? (i + 1) + ". " : prefix) + l; }).join("\n");
+    ta.value = v.slice(0, ls) + out + v.slice(le);
+    ta.selectionStart = ls; ta.selectionEnd = ls + out.length;
+    ta.focus(); ta.dispatchEvent(new Event("input"));
+  }
+
+  function blockText(ta, text) {
+    var sel = selection(ta);
+    var v = ta.value;
+    var pre = sel.s > 0 && v[sel.s - 1] !== "\n" ? "\n\n" : (sel.s > 1 && v[sel.s - 2] !== "\n" ? "\n" : "");
+    replaceSelection(ta, pre + text + "\n\n");
+  }
+
+  function applyFormat(ta, fmt) {
+    switch (fmt) {
+      case "bold": return wrap(ta, "**", "**", "texto");
+      case "italic": return wrap(ta, "_", "_", "texto");
+      case "h2": return linePrefix(ta, "## ");
+      case "h3": return linePrefix(ta, "### ");
+      case "ul": return linePrefix(ta, "- ");
+      case "ol": return linePrefix(ta, "", true);
+      case "link": {
+        var sel = selection(ta);
+        var url = prompt("Dirección del enlace", "https://");
+        if (!url) return;
+        return replaceSelection(ta, "[" + (sel.text || "texto del enlace") + "](" + url + ")");
+      }
+      case "code": return selection(ta).text.indexOf("\n") >= 0 ? wrap(ta, "```\n", "\n```", "código") : wrap(ta, "`", "`", "código");
+      case "quote": return linePrefix(ta, "> ");
+      case "table": return blockText(ta, "| Parámetro | Valor | Nota |\n| --- | --- | --- |\n| … | … | … |");
+    }
+  }
+
+  function blockSnippet(kind, images) {
+    var imgs = images && images.length ? images : null;
+    var ph = function (n, cap) { return "![" + cap + "](../images/carpeta/foto-" + n + ".jpg)"; };
+    var list = function (n, cap) {
+      return imgs ? imgs.map(function (im) { return "![" + (im.caption || im.name) + "](" + im.rel + ")"; }).join("\n")
+        : Array.apply(null, Array(n)).map(function (_, i) { return ph(i + 1, cap + " " + (i + 1)); }).join("\n");
+    };
+    switch (kind) {
+      case "carrete": return '<div class="carrete" markdown>\n\n' + list(3, "Paso") + "\n\n</div>";
+      case "galeria": return '<div class="galeria tres" markdown>\n\n' + list(3, "Foto") + "\n\n</div>";
+      case "comparar": return '<div class="comparar" markdown>\n\n' + (imgs && imgs.length >= 2
+        ? "![Antes](" + imgs[0].rel + ")\n![Después](" + imgs[1].rel + ")"
+        : ph(1, "Antes") + "\n" + ph(2, "Después")) + "\n\n</div>";
+      case "hero": return '<figure class="hero-shot" markdown>\n' + (imgs ? "![" + (imgs[0].caption || "Resultado final") + "](" + imgs[0].rel + ")" : ph(1, "Resultado final")) + "\n</figure>";
+      case "datos": return '<div class="datos" markdown>\n\n- **Máquina / técnica**: …\n- **Materiales**: …\n- **Software**: …\n- **Tiempo**: …\n\n</div>';
+      case "linea": return '<div class="linea" markdown>\n\n- **Semana 1** · …\n- **Semana 2** · …\n- **Semana 3** · …\n\n</div>';
+      case "video": {
+        var u = prompt("Dirección del video (YouTube o Vimeo)", "https://www.youtube.com/watch?v=");
+        if (!u) return null;
+        var m = u.match(/(?:youtu\.be\/|v=|embed\/)([A-Za-z0-9_-]{6,})/);
+        var src = m ? "https://www.youtube.com/embed/" + m[1] : (u.match(/vimeo\.com\/(\d+)/) ? "https://player.vimeo.com/video/" + u.match(/vimeo\.com\/(\d+)/)[1] : u);
+        return '<div class="video"><iframe src="' + src + '" title="Video" allowfullscreen></iframe></div>';
+      }
+      case "ok": return '<span class="ok">éxito</span> …';
+      case "fail": return '<span class="fail">falló</span> …';
+      case "nota": return '!!! note "Título"\n    Texto de la nota.';
+    }
+    return null;
+  }
+
+  function bindToolbar(tb, ta, getImages) {
+    if (!tb) return;
+    tb.querySelectorAll("button[data-fmt]").forEach(function (b) {
+      b.addEventListener("click", function () { applyFormat(ta, b.dataset.fmt); });
+    });
+    tb.querySelectorAll("button[data-block]").forEach(function (b) {
+      b.addEventListener("click", function () {
+        var t = blockSnippet(b.dataset.block, getImages ? getImages() : null);
+        if (t == null) return;
+        if (b.dataset.block === "ok" || b.dataset.block === "fail") wrap(ta, t.replace(" …", " "), "", "…");
+        else blockText(ta, t);
+      });
+    });
+    ta.addEventListener("keydown", function (e) {
+      if (!(e.ctrlKey || e.metaKey)) return;
+      var k = e.key.toLowerCase();
+      if (k === "b") { e.preventDefault(); applyFormat(ta, "bold"); }
+      else if (k === "i") { e.preventDefault(); applyFormat(ta, "italic"); }
+      else if (k === "k") { e.preventDefault(); applyFormat(ta, "link"); }
     });
   }
 
@@ -689,6 +813,7 @@
         insertAtCursor($(textareaId), "\n" + carrete(list, clase) + "\n");
       });
     }
+    bindToolbar($("be-tb-proceso"), $("be-proceso"), function () { return imgsNueva; });
     bindInsert("be-ins-carrete", imgsNueva, "be-proceso", "carrete");
     bindInsert("be-ins-galeria", imgsNueva, "be-proceso", "galeria tres");
     bindInsert("be-ins-carrete2", imgsEdit, "be-contenido", "carrete");
@@ -765,71 +890,214 @@
 
     /* --- editar archivo existente --- */
     var EDITABLE = /\.(md|yml|yaml|css|js|txt|html|csv|svg)$/i;
+    var dirty = false;
+    var previewTimer = null;
+
+    function setDirty(v) {
+      dirty = v;
+      $("be-dirty").textContent = v ? "Cambios sin guardar" : "";
+    }
+    window.addEventListener("beforeunload", function (e) {
+      if (dirty) { e.preventDefault(); e.returnValue = ""; }
+    });
 
     function loadTree() {
-      if (!gh.token) return Promise.resolve();
       return gh.tree().then(function (paths) {
         treePaths = paths.filter(function (p) { return (p.indexOf("docs/") === 0 || p === "mkdocs.yml") && EDITABLE.test(p); }).sort();
         var sel = $("be-archivo");
         var prev = sel.value;
-        sel.innerHTML = '<option value="">Elegí un archivo…</option>';
+        sel.innerHTML = '<option value="">Elegí una página…</option>';
+        var groupsByDir = {};
         treePaths.forEach(function (p) {
-          var o = document.createElement("option"); o.value = p; o.textContent = p; sel.appendChild(o);
+          var dir = p === "mkdocs.yml" ? "Configuración" : (dirname(p).replace(/^docs\/?/, "") || "Inicio");
+          (groupsByDir[dir] = groupsByDir[dir] || []).push(p);
+        });
+        Object.keys(groupsByDir).sort().forEach(function (dir) {
+          var og = document.createElement("optgroup");
+          og.label = dir;
+          groupsByDir[dir].forEach(function (p) {
+            var o = document.createElement("option");
+            o.value = p; o.textContent = p.replace(/^docs\//, ""); og.appendChild(o);
+          });
+          sel.appendChild(og);
         });
         if (prev && treePaths.indexOf(prev) >= 0) sel.value = prev;
-      }).catch(function (e) { log("be-log2", "No pude listar los archivos: " + e.message, true); });
+      }).catch(function (e) { if (gh.token) log("be-log2", "No pude listar los archivos: " + e.message, true); });
     }
 
     $("be-recargar").addEventListener("click", function () {
-      if (!gh.token) { log("be-log2", "Conectate primero (pestaña Mi cuenta).", true); return; }
       loadTree().then(function () { log("be-log2", "Lista actualizada."); });
     });
 
+    function openFile(p, text, sha, nuevo) {
+      editFile = { path: p, sha: sha || null, nuevo: !!nuevo };
+      $("be-contenido").value = text;
+      $("be-mensaje").value = (nuevo ? "Nueva página: " : "Edito ") + p.replace(/^docs\//, "");
+      if (/^docs\/.*\.md$/.test(p)) {
+        $("be-ver").href = pageUrl(cfg.site, p); $("be-ver").style.display = nuevo ? "none" : "inline-block";
+      } else {
+        $("be-ver").style.display = "none";
+      }
+      imgsEdit.splice(0, imgsEdit.length); renderImages("be-images2", imgsEdit, "be-contenido");
+      setDirty(!!nuevo);
+      schedulePreview(0);
+    }
+
     $("be-archivo").addEventListener("change", function () {
       var p = this.value;
-      editFile = null; $("be-contenido").value = ""; $("be-ver").style.display = "none";
-      imgsEdit.splice(0, imgsEdit.length); renderImages("be-images2", imgsEdit, "be-contenido");
-      $("be-preview2").style.display = "none";
-      if (!p) return;
+      if (dirty && !confirm("Hay cambios sin guardar. ¿Cambiar de página igual?")) { this.value = editFile ? editFile.path : ""; return; }
+      editFile = null; $("be-contenido").value = ""; $("be-ver").style.display = "none"; setDirty(false);
+      if (!p) { schedulePreview(0); return; }
       log("be-log2", "Cargando " + p + "…");
       gh.getText(p).then(function (f) {
-        editFile = { path: p, sha: f.sha };
-        $("be-contenido").value = f.text;
-        $("be-mensaje").value = "Edito " + p;
-        if (/^docs\/.*\.md$/.test(p)) {
-          var u = cfg.site + p.replace(/^docs\//, "").replace(/(^|\/)index\.md$/, "$1").replace(/\.md$/, "/");
-          $("be-ver").href = u; $("be-ver").style.display = "inline-block";
-        }
+        openFile(p, f.text, f.sha, false);
         log("be-log2", p + " cargado (" + fmtSize(new TextEncoder().encode(f.text).length) + ").");
       }).catch(function (e) { log("be-log2", "No pude cargar: " + e.message, true); });
     });
 
-    $("be-previsualizar2").addEventListener("click", function () {
+    /* vista previa en vivo */
+    function schedulePreview(delay) {
+      clearTimeout(previewTimer);
+      previewTimer = setTimeout(renderPreview, delay == null ? 400 : delay);
+    }
+    function renderPreview() {
       var box = $("be-preview2");
-      if (!editFile || !/\.md$/i.test(editFile.path)) { log("be-log2", "La vista previa es solo para archivos .md.", true); return; }
-      renderMd($("be-contenido").value, imgsEdit).then(function (html) {
-        box.innerHTML = html; box.style.display = "block";
-      }).catch(function (e) { log("be-log2", e.message, true); });
+      var p = editFile ? editFile.path : null;
+      var md = $("be-contenido").value;
+      if (!md.trim()) { box.innerHTML = '<p class="be-kv">La vista previa aparece acá mientras escribís.</p>'; return; }
+      if (p && !/\.md$/i.test(p)) { box.innerHTML = '<p class="be-kv">Sin vista previa para este tipo de archivo.</p>'; return; }
+      renderMd(md, imgsEdit, p ? pageUrl(cfg.site, p) : null).then(function (html) {
+        box.innerHTML = html;
+      }).catch(function (e) { box.innerHTML = '<p class="be-kv">' + escapeHtml(e.message) + "</p>"; });
+    }
+    $("be-contenido").addEventListener("input", function () {
+      if (editFile) setDirty(true);
+      schedulePreview();
+    });
+
+    /* vista: texto, dividido, vista previa */
+    function setView(v) {
+      $("be-work").dataset.view = v;
+      $("be-tb").querySelectorAll("button[data-view]").forEach(function (b) { b.setAttribute("aria-pressed", b.dataset.view === v ? "true" : "false"); });
+      try { localStorage.setItem("bitacora.vista", v); } catch (e) { /* nada */ }
+    }
+    $("be-tb").querySelectorAll("button[data-view]").forEach(function (b) {
+      b.addEventListener("click", function () { setView(b.dataset.view); });
+    });
+    try { setView(localStorage.getItem("bitacora.vista") || "dividido"); } catch (e) { setView("dividido"); }
+
+    $("be-full").addEventListener("click", function () {
+      var on = root.classList.toggle("be-fullscreen");
+      document.body.classList.toggle("be-fullscreen-body", on);
+      $("be-full").setAttribute("aria-pressed", on ? "true" : "false");
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && root.classList.contains("be-fullscreen")) $("be-full").click();
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s" && root.querySelector('.be-panel[data-panel="editar"]').classList.contains("active")) {
+        e.preventDefault(); $("be-guardar").click();
+      }
+    });
+
+    bindToolbar($("be-tb"), $("be-contenido"), function () { return imgsEdit; });
+
+    /* página nueva desde plantilla */
+    function fillNpSections() {
+      var sel = $("be-np-seccion");
+      sel.innerHTML = "";
+      groups.forEach(function (g) {
+        var o = document.createElement("option"); o.value = g.name; o.textContent = g.name; sel.appendChild(o);
+      });
+      var n = document.createElement("option"); n.value = "__nueva__"; n.textContent = "Sección nueva…"; sel.appendChild(n);
+    }
+    function npGroup() {
+      var v = $("be-np-seccion").value;
+      if (v === "__nueva__") {
+        var name = prompt("Nombre de la sección nueva");
+        if (!name) return null;
+        return { name: name, folder: slugify(name), nueva: true };
+      }
+      return groups.filter(function (g) { return g.name === v; })[0];
+    }
+    function npPath() {
+      var g = groups.filter(function (g) { return g.name === $("be-np-seccion").value; })[0];
+      var slug = slugify($("be-np-titulo").value) || "pagina";
+      return "docs/" + (g ? g.folder : "seccion") + "/" + slug + ".md";
+    }
+    $("be-nueva-pagina").addEventListener("click", function () {
+      fillNpSections();
+      var np = $("be-np");
+      np.style.display = np.style.display === "none" ? "block" : "none";
+      $("be-np-ruta").textContent = npPath();
+      $("be-np-titulo").focus();
+    });
+    $("be-np-cancelar").addEventListener("click", function () { $("be-np").style.display = "none"; });
+    $("be-np-titulo").addEventListener("input", function () { $("be-np-ruta").textContent = npPath(); });
+    $("be-np-seccion").addEventListener("change", function () { $("be-np-ruta").textContent = npPath(); });
+    $("be-np-plantilla").addEventListener("change", function () {
+      var map = { tecnologia: "Tecnología y Fabricación", diseno: "Diseño", innovacion: "Innovación", proyecto: "Proyecto Integrador", referencia: "Referencias" };
+      var want = map[this.value];
+      if (want && groups.some(function (g) { return g.name === want; })) { $("be-np-seccion").value = want; $("be-np-ruta").textContent = npPath(); }
+    });
+    $("be-np-crear").addEventListener("click", function () {
+      var titulo = $("be-np-titulo").value.trim();
+      if (!titulo) { log("be-log2", "Poné un título para la página nueva.", true); return; }
+      var g = npGroup();
+      if (!g) return;
+      var path = "docs/" + g.folder + "/" + (slugify(titulo) || "pagina") + ".md";
+      var tpl = $("be-np-plantilla").value;
+      var btn = this; btn.disabled = true;
+      log("be-log2", "Preparando " + path + "…");
+      var getTpl = tpl ? gh.getText("docs/plantillas/" + tpl + ".md").then(function (f) { return f.text; })
+        : Promise.resolve("---\ntitle: " + yamlQuote(titulo) + "\n---\n\n# " + titulo + "\n\n<p class=\"meta\">" + escapeHtml(g.name) + " · " + today() + "</p>\n\n");
+      Promise.all([getTpl, gh.exists(path)]).then(function (r) {
+        var text = r[0], exists = r[1];
+        if (exists) { log("be-log2", "Ya existe " + path + ". Elegila en la lista para editarla.", true); return; }
+        text = text.replace(/^---\ntitle: .*\n---\n/, "---\ntitle: " + yamlQuote(titulo) + "\n---\n");
+        text = text.replace(/^# .*$/m, "# " + titulo);
+        text = text.replace(/AAAA-MM-DD/g, today());
+        editFile = null;
+        $("be-archivo").value = "";
+        openFile(path, text, null, true);
+        editFile.group = g;
+        editFile.titulo = titulo;
+        $("be-np").style.display = "none";
+        log("be-log2", "Página nueva lista. Reemplazá los textos en cursiva y las fotos de ejemplo, y guardá.");
+      }).catch(function (e) { log("be-log2", "No pude preparar la página: " + e.message, true); }).then(function () { btn.disabled = false; });
     });
 
     $("be-guardar").addEventListener("click", function () {
-      if (!editFile) { log("be-log2", "Elegí un archivo primero.", true); return; }
+      if (!editFile) { log("be-log2", "Elegí una página primero.", true); return; }
+      if (!gh.token) { log("be-log2", "Para guardar hace falta conectar tu cuenta (pestaña Mi cuenta).", true); return; }
       var btn = this; btn.disabled = true;
       var files = [{ path: editFile.path, text: $("be-contenido").value }];
       imgsEdit.forEach(function (im) { files.push({ path: im.repoPath, bytes: im.bytes }); });
       var msg = ($("be-mensaje").value.trim() || "Edito " + editFile.path) + "\n\nEditado desde la bitácora.";
-      gh.commit(files, msg, function (s) { log("be-log2", s + "…"); }).then(function (c) {
-        log("be-log2", "Guardado en el commit " + c.sha.slice(0, 7) + ". El sitio se reconstruye en uno o dos minutos.");
+      var pre = Promise.resolve();
+      if (editFile.nuevo && editFile.group) {
+        pre = loadNav().then(function () {
+          var y = navInsert(navYaml, editFile.group.name, editFile.titulo, editFile.path.replace(/^docs\//, ""));
+          if (y !== navYaml) files.push({ path: "mkdocs.yml", text: y });
+        });
+      }
+      pre.then(function () {
+        return gh.commit(files, msg, function (s) { log("be-log2", s + "…"); });
+      }).then(function (c) {
+        var wasNew = editFile.nuevo;
+        editFile.nuevo = false; delete editFile.group;
+        setDirty(false);
+        log("be-log2", "Guardado en el commit " + c.sha.slice(0, 7) + ". El sitio se reconstruye en uno o dos minutos." + (wasNew ? "\n→ " + pageUrl(cfg.site, editFile.path) : ""));
+        if (/\.md$/.test(editFile.path)) { $("be-ver").href = pageUrl(cfg.site, editFile.path); $("be-ver").style.display = "inline-block"; }
         imgsEdit.splice(0, imgsEdit.length); renderImages("be-images2", imgsEdit, "be-contenido");
         if (editFile.path === "mkdocs.yml") navYaml = null;
-        return loadTree();
+        navYaml = null;
+        return loadTree().then(function () { $("be-archivo").value = editFile.path; });
       }).catch(function (e) {
         log("be-log2", "No se guardó: " + e.message, true);
       }).then(function () { btn.disabled = false; });
     });
 
     $("be-borrar").addEventListener("click", function () {
-      if (!editFile) { log("be-log2", "Elegí un archivo primero.", true); return; }
+      if (!editFile || editFile.nuevo) { log("be-log2", "Elegí una página guardada primero.", true); return; }
       if (editFile.path === "mkdocs.yml" || /\/index\.md$/.test("/" + editFile.path.replace(/^docs\//, ""))) {
         log("be-log2", "Ese archivo no se borra desde acá.", true); return;
       }
@@ -837,12 +1105,16 @@
       var p = editFile.path, btn = this; btn.disabled = true;
       gh.commit([{ path: p, remove: true }], "Borro " + p + "\n\nEditado desde la bitácora.").then(function (c) {
         log("be-log2", "Borrado en el commit " + c.sha.slice(0, 7) + ".");
-        editFile = null; $("be-contenido").value = ""; $("be-archivo").value = "";
+        editFile = null; $("be-contenido").value = ""; $("be-archivo").value = ""; setDirty(false); schedulePreview(0);
         return loadTree();
       }).catch(function (e) {
         log("be-log2", "No se borró: " + e.message, true);
       }).then(function () { btn.disabled = false; });
     });
+
+    // Sin token igual se puede explorar: el repositorio es público
+    loadTree();
+    loadNav().catch(function () { /* sin red: quedan las secciones conocidas */ });
 
     /* --- arranque --- */
     var t = storedToken();

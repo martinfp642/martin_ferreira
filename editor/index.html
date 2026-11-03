@@ -562,6 +562,19 @@
   <h3><span class="be-num">3</span>Proceso paso a paso</h3>
   <div class="be-field">
     <label for="be-proceso">Qué hice, con qué herramientas y materiales <small>Una línea por paso. Las imágenes se insertan donde esté el cursor con el botón de cada foto.</small></label>
+    <div class="be-tb be-tb-mini" id="be-tb-proceso">
+      <div class="be-tb-group">
+        <button type="button" data-fmt="bold" title="Negrita"><b>B</b></button>
+        <button type="button" data-fmt="h3" title="Subtítulo">H3</button>
+        <button type="button" data-fmt="ul" title="Lista">• Lista</button>
+        <button type="button" data-fmt="link" title="Enlace">Enlace</button>
+        <button type="button" data-block="carrete">Carrete</button>
+        <button type="button" data-block="galeria">Galería</button>
+        <button type="button" data-block="comparar">Comparar</button>
+        <button type="button" data-block="datos">Datos</button>
+        <button type="button" data-block="video">Video</button>
+      </div>
+    </div>
     <textarea id="be-proceso" style="min-height:11rem"></textarea>
   </div>
   <div class="be-field">
@@ -631,23 +644,87 @@
 <!-- ============================ EDITAR ARCHIVO ============================ -->
 <section class="be-panel" data-panel="editar">
 
-<div class="be-row">
-  <div class="be-field">
-    <label for="be-archivo">Archivo del repositorio <small>Páginas en <code>docs/</code>, estilos, scripts y <code>mkdocs.yml</code> (el menú).</small></label>
-    <select id="be-archivo"><option value="">Conectate para ver los archivos</option></select>
+<div class="be-filebar">
+  <div class="be-field grow">
+    <label for="be-archivo">Página <small>Páginas en <code>docs/</code>, estilos, scripts y <code>mkdocs.yml</code> (el menú).</small></label>
+    <select id="be-archivo"><option value="">Conectate o elegí una página…</option></select>
   </div>
-  <div class="be-field">
-    <label>&nbsp;</label>
-    <div class="be-actions" style="margin:0">
-      <button type="button" id="be-recargar" class="small">Actualizar lista</button>
-      <a id="be-ver" class="md-button" href="#" target="_blank" rel="noopener" style="display:none">Ver en el sitio</a>
-    </div>
+  <div class="be-filebar-actions">
+    <button type="button" class="small" id="be-nueva-pagina">+ Página nueva</button>
+    <button type="button" class="small" id="be-recargar">Actualizar lista</button>
+    <a id="be-ver" class="md-button" href="#" target="_blank" rel="noopener" style="display:none">Ver en el sitio</a>
   </div>
 </div>
 
-<div class="be-field">
-  <label for="be-contenido">Contenido</label>
-  <textarea id="be-contenido" class="code" spellcheck="false"></textarea>
+<div class="be-np" id="be-np" style="display:none">
+  <div class="be-row">
+    <div class="be-field">
+      <label for="be-np-seccion">Sección</label>
+      <select id="be-np-seccion"></select>
+    </div>
+    <div class="be-field">
+      <label for="be-np-plantilla">Plantilla</label>
+      <select id="be-np-plantilla">
+        <option value="tecnologia">Tecnología y Fabricación</option>
+        <option value="diseno">Diseño</option>
+        <option value="innovacion">Innovación</option>
+        <option value="proyecto">Proyecto Integrador</option>
+        <option value="referencia">Referencias</option>
+        <option value="">Vacía</option>
+      </select>
+    </div>
+    <div class="be-field">
+      <label for="be-np-titulo">Título</label>
+      <input type="text" id="be-np-titulo" placeholder="Ej.: MT02 · Corte láser">
+      <span class="hint be-kv" id="be-np-ruta"></span>
+    </div>
+  </div>
+  <div class="be-actions" style="margin:0 0 .5rem">
+    <button type="button" class="primary small" id="be-np-crear">Crear y abrir en el editor</button>
+    <button type="button" class="small" id="be-np-cancelar">Cancelar</button>
+  </div>
+</div>
+
+<div class="be-tb" id="be-tb">
+  <div class="be-tb-group" data-help="Formato">
+    <button type="button" data-fmt="bold" title="Negrita (Ctrl+B)"><b>B</b></button>
+    <button type="button" data-fmt="italic" title="Cursiva (Ctrl+I)"><i>I</i></button>
+    <button type="button" data-fmt="h2" title="Título de sección">H2</button>
+    <button type="button" data-fmt="h3" title="Subtítulo">H3</button>
+    <button type="button" data-fmt="ul" title="Lista">• Lista</button>
+    <button type="button" data-fmt="ol" title="Lista numerada">1. Lista</button>
+    <button type="button" data-fmt="link" title="Enlace (Ctrl+K)">Enlace</button>
+    <button type="button" data-fmt="code" title="Código">&lt;/&gt;</button>
+    <button type="button" data-fmt="quote" title="Cita">“ Cita</button>
+    <button type="button" data-fmt="table" title="Tabla">Tabla</button>
+  </div>
+  <div class="be-tb-group" data-help="Bloques">
+    <button type="button" data-block="carrete" title="Carrusel de fotos">Carrete</button>
+    <button type="button" data-block="galeria" title="Grilla de fotos">Galería</button>
+    <button type="button" data-block="comparar" title="Antes / después">Comparar</button>
+    <button type="button" data-block="hero" title="Foto grande del resultado">Hero shot</button>
+    <button type="button" data-block="datos" title="Ficha de datos">Datos</button>
+    <button type="button" data-block="linea" title="Línea de tiempo">Línea</button>
+    <button type="button" data-block="video" title="Video de YouTube o Vimeo">Video</button>
+    <button type="button" data-block="ok" title="Etiqueta de éxito">Éxito</button>
+    <button type="button" data-block="fail" title="Etiqueta de fallo">Falló</button>
+    <button type="button" data-block="nota" title="Recuadro de nota">Nota</button>
+  </div>
+  <div class="be-tb-group be-tb-right" data-help="Vista">
+    <button type="button" data-view="editar">Texto</button>
+    <button type="button" data-view="dividido" aria-pressed="true">Dividido</button>
+    <button type="button" data-view="previa">Vista previa</button>
+    <button type="button" id="be-full" title="Pantalla completa">⤢</button>
+  </div>
+</div>
+
+<div class="be-work" id="be-work" data-view="dividido">
+  <div class="be-col be-col-texto">
+    <textarea id="be-contenido" class="code" spellcheck="false" placeholder="Elegí una página arriba o creá una nueva."></textarea>
+  </div>
+  <div class="be-col be-col-previa">
+    <div class="be-preview md-typeset" id="be-preview2"><p class="be-kv">La vista previa aparece acá mientras escribís.</p></div>
+  </div>
 </div>
 
 <div class="be-field">
@@ -667,13 +744,12 @@
 </div>
 
 <div class="be-actions">
-  <button type="button" class="primary" id="be-guardar">Guardar en el repositorio</button>
-  <button type="button" id="be-previsualizar2">Vista previa</button>
+  <button type="button" class="primary" id="be-guardar">Guardar en el repositorio <small>Ctrl+S</small></button>
   <button type="button" id="be-borrar">Borrar archivo</button>
+  <span class="be-dirty" id="be-dirty"></span>
 </div>
 
-<div class="be-log" id="be-log2">Elegí un archivo.</div>
-<div class="be-preview md-typeset" id="be-preview2" style="display:none"></div>
+<div class="be-log" id="be-log2">Elegí una página.</div>
 
 </section>
 
@@ -717,6 +793,14 @@
   <li>GitHub Actions reconstruye el sitio. Tarda uno o dos minutos; el avance se ve en <a href="https://github.com/martinfp642/martin_ferreira/actions" target="_blank" rel="noopener">Actions</a>.</li>
 </ol>
 
+<h3>Editor de páginas</h3>
+<ul>
+  <li><strong>+ Página nueva</strong> crea una página en la sección elegida a partir de una plantilla, y al guardar la agrega al menú.</li>
+  <li>La barra <strong>Formato</strong> aplica negrita, títulos, listas, enlaces y tablas al texto seleccionado. La barra <strong>Bloques</strong> inserta carrete, galería, comparación, ficha de datos, línea de tiempo, video y etiquetas de resultado. Si hay fotos cargadas, el carrete y la galería se arman con ellas.</li>
+  <li>La vista previa se actualiza sola mientras escribís, con los carretes funcionando. Se puede ver solo el texto, solo la vista previa, o las dos en paralelo. El botón <strong>⤢</strong> pone el editor a pantalla completa (Esc para salir).</li>
+  <li>Atajos: <kbd>Ctrl</kbd>+<kbd>B</kbd> negrita, <kbd>Ctrl</kbd>+<kbd>I</kbd> cursiva, <kbd>Ctrl</kbd>+<kbd>K</kbd> enlace, <kbd>Ctrl</kbd>+<kbd>S</kbd> guardar.</li>
+</ul>
+
 <h3>Sin token</h3>
 <p>Igual podés escribir la entrada, <strong>copiar el Markdown</strong> o <strong>descargar el .md</strong> y subirlo después desde Visual Studio Code, como hasta ahora.</p>
 
@@ -738,7 +822,7 @@
 <div class="md-source-date">
   <small>
     
-      Last update: <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="November 3, 2026 00:24:43 UTC">November 3, 2026</span>
+      Last update: <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="November 3, 2026 01:11:30 UTC">November 3, 2026</span>
     
   </small>
 </div>

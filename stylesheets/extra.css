@@ -1307,3 +1307,195 @@ body {
     padding: 1rem;
   }
 }
+
+/* =====================================================================
+   Editor visual de páginas (pestaña "Editar archivo")
+   ===================================================================== */
+.be-filebar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  align-items: flex-end;
+  margin-bottom: 0.8rem;
+}
+
+.be-filebar .grow {
+  flex: 1 1 18rem;
+  margin: 0;
+}
+
+.be-filebar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+  padding-bottom: 0.1rem;
+}
+
+.be-np {
+  border: 2px solid var(--line);
+  background: var(--panel);
+  padding: 0.9rem 1rem 0.4rem;
+  margin: 0 0 1rem;
+}
+
+.be-tb {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  border-top: 2px solid var(--line);
+  border-bottom: 2px solid var(--line);
+  padding: 0.5rem 0;
+  margin: 0 0 0.6rem;
+  position: relative;
+}
+
+.be-tb-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  align-items: center;
+}
+
+.be-tb-group::before {
+  content: attr(data-help);
+  font-size: 0.5rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  margin-right: 0.3rem;
+  color: var(--ink);
+}
+
+.be-tb-group:not([data-help])::before {
+  display: none;
+}
+
+.be-tb-right {
+  margin-left: auto;
+}
+
+.be .be-tb button {
+  font-size: 0.56rem;
+  padding: 0.45em 0.6em;
+  letter-spacing: 0.06em;
+  min-width: 2rem;
+}
+
+.be .be-tb button[data-block] {
+  background: var(--panel);
+}
+
+.be .be-tb button[data-block]:hover,
+.be .be-tb button[aria-pressed="true"] {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.be-tb-mini {
+  border-top: 0;
+  border-bottom: 0;
+  padding: 0 0 0.3rem;
+  margin: 0;
+}
+
+.be-work {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2px;
+  background: var(--line);
+  border: 2px solid var(--line);
+  margin-bottom: 1.2rem;
+}
+
+.be-work .be-col {
+  background: var(--paper);
+  min-width: 0;
+}
+
+.be-work textarea.code,
+.be .be-work textarea.code {
+  border: 0;
+  min-height: 60vh;
+  height: 60vh;
+  resize: vertical;
+  padding: 0.9rem 1rem;
+}
+
+.be-work .be-preview,
+.be .be-work .be-preview {
+  border: 0;
+  margin: 0;
+  height: 60vh;
+  overflow: auto;
+  padding: 1rem 1.4rem;
+}
+
+.be-work[data-view="editar"] .be-col-previa,
+.be-work[data-view="previa"] .be-col-texto {
+  display: none;
+}
+
+@media (min-width: 60em) {
+  .be-work[data-view="dividido"] {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 59.9375em) {
+  .be-work[data-view="dividido"] .be-col-previa {
+    border-top: 2px solid var(--line);
+  }
+  .be-work[data-view="dividido"] textarea.code,
+  .be-work[data-view="dividido"] .be-preview {
+    height: 40vh;
+    min-height: 40vh;
+  }
+}
+
+.be-dirty {
+  align-self: center;
+  font-size: 0.58rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.be-dirty:not(:empty)::before {
+  content: "●";
+  margin-right: 0.4em;
+}
+
+.be button small,
+.be .be-actions button small {
+  font-size: 0.5rem;
+  font-weight: 400;
+  letter-spacing: 0.05em;
+  margin-left: 0.4em;
+  opacity: 0.7;
+}
+
+/* Pantalla completa */
+.be.be-fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  background: var(--paper);
+  overflow: auto;
+  padding: 1rem 1.4rem 2rem;
+}
+
+body.be-fullscreen-body {
+  overflow: hidden;
+}
+
+.be.be-fullscreen .be-work textarea.code,
+.be.be-fullscreen .be-work .be-preview {
+  height: calc(100vh - 14rem);
+  min-height: 20rem;
+}
+
+/* La vista previa muestra los componentes con el mismo estilo del sitio */
+.be-preview .carrete img {
+  height: 14rem;
+}
