@@ -1956,3 +1956,247 @@ body.be-fullscreen-body {
     max-width: 92rem;
   }
 }
+
+/* =====================================================================
+   Armar página: tarjetas de plantillas, íconos de bloque, ajuste de foto
+   ===================================================================== */
+.bc-plantillas {
+  margin: 0.4rem 0 1.2rem;
+}
+
+.bc-plantillas-titulo {
+  font-size: 0.55rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  margin-bottom: 0.5rem;
+}
+
+.bc-plantillas-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
+  gap: 2px;
+  background: var(--line);
+  border: 2px solid var(--line);
+}
+
+.be .bc-plantilla {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  text-align: left;
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 400;
+  background: var(--paper);
+  border: 0;
+  padding: 0.7rem 0.7rem 0.8rem;
+  gap: 0.4rem;
+  cursor: pointer;
+}
+
+.be .bc-plantilla:hover,
+.be .bc-plantilla.activa {
+  background: var(--panel);
+  color: var(--ink);
+}
+
+.be .bc-plantilla.activa {
+  outline: 3px solid var(--line);
+  outline-offset: -3px;
+}
+
+.bc-plantilla-wire {
+  display: block;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  padding: 0.3rem;
+}
+
+.bc-plantilla-wire svg {
+  display: block;
+  width: 100%;
+  height: 7rem;
+}
+
+.bc-plantilla-nombre {
+  font-size: 0.64rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.bc-plantilla-desc {
+  font-size: 0.6rem;
+  line-height: 1.4;
+}
+
+.bc-ico-head {
+  width: 1.3rem;
+  height: 1.3rem;
+  font-size: 0.65rem;
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.bc-bloque.plegado .bc-ico-head {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.be .bc-imgbtns button:first-child {
+  flex: 2;
+}
+
+/* Ajustar foto */
+.bc-ajuste {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: rgba(255, 255, 255, 0.96);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  overflow: auto;
+}
+
+.bc-ajuste-caja {
+  width: min(56rem, 100%);
+  background: var(--paper);
+  border: 2px solid var(--line);
+  padding: 1rem 1.2rem 1.2rem;
+  font-family: var(--md-text-font);
+}
+
+.bc-ajuste-titulo {
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  border-bottom: 2px solid var(--line);
+  padding-bottom: 0.5rem;
+  margin-bottom: 0.8rem;
+}
+
+.bc-ajuste-nombre {
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  margin-left: 0.6rem;
+}
+
+.bc-ajuste-lienzo {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: var(--panel);
+  border: 2px solid var(--line);
+  min-height: 12rem;
+  max-height: 60vh;
+  padding: 0.6rem;
+}
+
+.bc-ajuste-lienzo canvas {
+  max-width: 100%;
+  max-height: 56vh;
+  border: 1px solid var(--line);
+  background: var(--paper);
+}
+
+.bc-ajuste-ctl {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 0.5rem 1.2rem;
+  margin: 0.9rem 0 0.4rem;
+}
+
+.bc-ajuste-grupo {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+}
+
+.bc-ajuste-grupo > span {
+  font-size: 0.55rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  min-width: 4.5rem;
+}
+
+.bc-ajuste button {
+  font-family: var(--md-text-font);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.56rem;
+  background: var(--paper);
+  color: var(--ink);
+  border: 2px solid var(--line);
+  padding: 0.4em 0.7em;
+  cursor: pointer;
+  border-radius: 0;
+}
+
+.bc-ajuste button:hover,
+.bc-ajuste button[aria-pressed="true"],
+.bc-ajuste button.primary {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.bc-ajuste input[type="range"] {
+  flex: 1;
+  accent-color: #000;
+  min-width: 6rem;
+}
+
+.bc-ajuste .be-actions {
+  margin: 0.6rem 0 0;
+}
+
+.bc-ajuste .be-check {
+  font-family: var(--md-text-font);
+  font-size: 0.66rem;
+}
+
+/* Tarjetas de plantilla: celdas vacías en blanco y texto normal */
+.bc-plantillas-grid {
+  background: var(--paper);
+  gap: 0;
+}
+
+.md-typeset .be .bc-plantillas .bc-plantilla {
+  outline: 1px solid var(--line);
+  outline-offset: -0.5px;
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 400;
+}
+
+.md-typeset .be .bc-plantillas .bc-plantilla.activa {
+  outline: 3px solid var(--line);
+  outline-offset: -3px;
+}
+
+.md-typeset .be .bc-plantilla .bc-plantilla-nombre {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 800;
+}
+
+/* Galería y ficha: sin celdas negras cuando quedan huecos */
+.md-typeset .galeria,
+.md-typeset .datos > ul {
+  gap: 0;
+  background: var(--paper);
+}
+
+.md-typeset .galeria > p,
+.md-typeset .galeria > figure,
+.md-typeset .datos > ul > li {
+  outline: 1px solid var(--line);
+  outline-offset: -0.5px;
+}

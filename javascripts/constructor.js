@@ -66,6 +66,40 @@
     archivos:   { nombre: "Archivos",        data: function () { return { files: [] }; } }
   };
 
+  var ICONOS = { titulo: "H", texto: "¶", imagen: "▣", carrete: "⧉", galeria: "▦", comparar: "◧", hero: "▬", datos: "☰", parametros: "⊞", linea: "⋮", resultado: "✓", nota: "!", video: "▶", codigo: "</>", archivos: "⇩" };
+
+  /* Esquemas dibujados de cada plantilla (líneas negras, como el sitio) */
+  function wire(parts) {
+    var y = 6, out = [];
+    parts.forEach(function (pt) {
+      switch (pt) {
+        case "h": out.push('<rect x="6" y="' + y + '" width="46" height="8" fill="#000"/>'); y += 12; break;
+        case "t": out.push('<rect x="6" y="' + y + '" width="88" height="2"/><rect x="6" y="' + (y + 4) + '" width="70" height="2"/>'); y += 10; break;
+        case "s": out.push('<rect x="6" y="' + y + '" width="30" height="3" fill="#000"/><rect x="6" y="' + (y + 5) + '" width="88" height="1"/>'); y += 10; break;
+        case "d": out.push('<rect x="6" y="' + y + '" width="88" height="14" fill="none" stroke="#000" stroke-width="1.5"/><line x1="50" y1="' + y + '" x2="50" y2="' + (y + 14) + '" stroke="#000"/><line x1="6" y1="' + (y + 7) + '" x2="94" y2="' + (y + 7) + '" stroke="#000"/>'); y += 18; break;
+        case "c": out.push('<rect x="6" y="' + y + '" width="88" height="26" fill="none" stroke="#000" stroke-width="1.5"/><rect x="8" y="' + (y + 2) + '" width="84" height="18" fill="#000" opacity=".15"/><rect x="10" y="' + (y + 22) + '" width="3" height="2" fill="#000"/><rect x="15" y="' + (y + 22) + '" width="3" height="2" fill="none" stroke="#000" stroke-width=".8"/>'); y += 30; break;
+        case "g": out.push('<rect x="6" y="' + y + '" width="27" height="16" fill="#000" opacity=".2"/><rect x="36" y="' + y + '" width="27" height="16" fill="#000" opacity=".2"/><rect x="66" y="' + y + '" width="28" height="16" fill="#000" opacity=".2"/><rect x="6" y="' + y + '" width="88" height="16" fill="none" stroke="#000" stroke-width="1.5"/>'); y += 20; break;
+        case "cmp": out.push('<rect x="6" y="' + y + '" width="43" height="16" fill="#000" opacity=".2"/><rect x="51" y="' + y + '" width="43" height="16" fill="#000" opacity=".35"/><rect x="6" y="' + y + '" width="88" height="16" fill="none" stroke="#000" stroke-width="1.5"/><rect x="6" y="' + y + '" width="14" height="4" fill="#000"/><rect x="51" y="' + y + '" width="18" height="4" fill="#000"/>'); y += 20; break;
+        case "hero": out.push('<rect x="6" y="' + y + '" width="88" height="22" fill="#000" opacity=".3"/><rect x="6" y="' + y + '" width="88" height="22" fill="none" stroke="#000" stroke-width="1.5"/>'); y += 26; break;
+        case "ok": out.push('<rect x="6" y="' + y + '" width="12" height="5" fill="#000"/><rect x="21" y="' + (y + 1) + '" width="50" height="2"/><rect x="6" y="' + (y + 8) + '" width="12" height="5" fill="none" stroke="#000" stroke-width="1"/><rect x="21" y="' + (y + 9) + '" width="40" height="2"/>'); y += 17; break;
+        case "l": out.push('<line x1="10" y1="' + y + '" x2="10" y2="' + (y + 16) + '" stroke="#000" stroke-width="1.5"/><rect x="8" y="' + (y + 1) + '" width="4" height="4" fill="#000"/><rect x="16" y="' + (y + 2) + '" width="50" height="2"/><rect x="8" y="' + (y + 9) + '" width="4" height="4" fill="#000"/><rect x="16" y="' + (y + 10) + '" width="40" height="2"/>'); y += 20; break;
+        case "v": out.push('<rect x="6" y="' + y + '" width="88" height="18" fill="none" stroke="#000" stroke-width="1.5"/><polygon points="46,' + (y + 4) + ' 46,' + (y + 14) + ' 56,' + (y + 9) + '" fill="#000"/>'); y += 22; break;
+        case "f": out.push('<rect x="6" y="' + y + '" width="3" height="3" fill="#000"/><rect x="12" y="' + (y + 0.5) + '" width="40" height="2"/><rect x="6" y="' + (y + 6) + '" width="3" height="3" fill="#000"/><rect x="12" y="' + (y + 6.5) + '" width="30" height="2"/>'); y += 13; break;
+        case "tbl": out.push('<rect x="6" y="' + y + '" width="88" height="12" fill="none" stroke="#000" stroke-width="1"/><rect x="6" y="' + y + '" width="88" height="4" fill="#000"/><line x1="36" y1="' + y + '" x2="36" y2="' + (y + 12) + '" stroke="#000"/><line x1="66" y1="' + y + '" x2="66" y2="' + (y + 12) + '" stroke="#000"/>'); y += 16; break;
+      }
+    });
+    return '<svg viewBox="0 0 100 ' + Math.max(y + 2, 60) + '" xmlns="http://www.w3.org/2000/svg" fill="#000">' + out.join("") + "</svg>";
+  }
+
+  var PLANTILLAS = [
+    { k: "tec", nombre: "Tecnología y Fabricación", desc: "Objetivo, ficha de datos, proceso en carrete, tabla de parámetros, resultados, antes/después, hero shot, archivos.", wire: ["h", "t", "d", "s", "c", "tbl", "s", "ok", "cmp", "hero", "f"] },
+    { k: "dis", nombre: "Diseño", desc: "Brief, referencias en galería, bocetos en carrete, iteraciones comparadas, resultado.", wire: ["h", "t", "d", "s", "g", "s", "c", "cmp", "hero", "ok", "f"] },
+    { k: "inn", nombre: "Innovación", desc: "Problema, investigación en línea de tiempo, ideas en galería, prueba en carrete, aprendizajes.", wire: ["h", "t", "s", "l", "s", "g", "s", "c", "ok", "f"] },
+    { k: "pro", nombre: "Proyecto Integrador", desc: "Avance semanal: hero shot, estado, línea de tiempo, lo que hice, decisiones, video.", wire: ["h", "hero", "d", "s", "t", "l", "s", "c", "ok", "v", "f"] },
+    { k: "ref", nombre: "Referencias", desc: "Un recurso: qué es, para qué me sirvió, cómo lo usé, licencia.", wire: ["h", "d", "s", "t", "s", "t", "g", "s", "t"] },
+    { k: "vacia", nombre: "Vacía", desc: "Empezar de cero y agregar elementos a mano.", wire: ["h", "t"] }
+  ];
+
   var ESTRUCTURAS = {
     tec: [["titulo", { text: "Objetivo" }], ["texto", {}], ["datos", {}], ["titulo", { text: "Referencias" }], ["texto", {}],
           ["titulo", { text: "Proceso" }], ["carrete", {}], ["parametros", {}], ["titulo", { text: "Resultados" }],
@@ -82,6 +116,10 @@
           ["titulo", { text: "Ideas" }], ["galeria", { cols: "dos" }], ["titulo", { text: "Prueba" }], ["carrete", {}],
           ["titulo", { text: "Qué aprendí" }], ["resultado", { ok: true }], ["resultado", { ok: false }],
           ["titulo", { text: "Próximo paso" }], ["texto", {}], ["titulo", { text: "Archivos y atribución" }], ["archivos", {}], ["texto", {}]],
+    ref: [["datos", { rows: [{ k: "Enlace", v: "" }, { k: "Autoría", v: "" }, { k: "Licencia", v: "" }, { k: "Lo usé en", v: "" }] }],
+          ["titulo", { text: "Qué es" }], ["texto", {}], ["titulo", { text: "Para qué me sirvió" }], ["texto", {}],
+          ["titulo", { text: "Cómo lo usé" }], ["galeria", { cols: "dos" }], ["titulo", { text: "Ojo con" }], ["texto", {}]],
+    vacia: [],
     pro: [["hero", {}], ["datos", { rows: [{ k: "Estado", v: "" }, { k: "Esta semana", v: "" }, { k: "Bloqueos", v: "" }, { k: "Siguiente", v: "" }] }],
           ["titulo", { text: "Dónde estoy" }], ["texto", {}], ["titulo", { text: "Línea de tiempo" }], ["linea", {}],
           ["titulo", { text: "Lo que hice esta semana" }], ["carrete", {}], ["titulo", { text: "Decisiones" }], ["texto", {}],
@@ -166,15 +204,119 @@
     root.querySelectorAll("#bc-paleta button[data-add]").forEach(function (btn) {
       btn.addEventListener("click", function () { add(btn.dataset.add); });
     });
-    [["bc-plantilla-tec", "tec"], ["bc-plantilla-dis", "dis"], ["bc-plantilla-inn", "inn"], ["bc-plantilla-pro", "pro"]].forEach(function (pair) {
-      $(pair[0]).addEventListener("click", function () {
-        if (blocks.length && !confirm("¿Reemplazar los elementos actuales por esta estructura?")) return;
-        blocks = [];
-        ESTRUCTURAS[pair[1]].forEach(function (e) { add(e[0], e[1], true); });
-        render(); changed();
-        log("Estructura cargada. Completá los elementos y quitá los que no uses.");
+    (function () {
+      var box = $("bc-plantillas");
+      var t = el("div", "bc-plantillas-titulo", "Empezar con una plantilla");
+      box.appendChild(t);
+      var grid = el("div", "bc-plantillas-grid");
+      var secciones = { tec: "Tecnología y Fabricación", dis: "Diseño", inn: "Innovación", pro: "Proyecto Integrador", ref: "Referencias" };
+      PLANTILLAS.forEach(function (pl) {
+        var card = el("button", "bc-plantilla");
+        card.type = "button";
+        card.innerHTML = '<span class="bc-plantilla-wire">' + wire(pl.wire) + '</span><span class="bc-plantilla-nombre">' + pl.nombre + '</span><span class="bc-plantilla-desc">' + pl.desc + "</span>";
+        card.addEventListener("click", function () {
+          if (blocks.length && !confirm("¿Reemplazar los elementos actuales por la plantilla \u201c" + pl.nombre + "\u201d?")) return;
+          blocks = [];
+          ESTRUCTURAS[pl.k].forEach(function (e) { add(e[0], e[1], true); });
+          if (secciones[pl.k] && B.groups().some(function (g) { return g.name === secciones[pl.k]; })) { $("bc-seccion").value = secciones[pl.k]; $("bc-seccion").dispatchEvent(new Event("change")); }
+          grid.querySelectorAll(".bc-plantilla").forEach(function (c) { c.classList.toggle("activa", c === card); });
+          render(); changed();
+          log(pl.k === "vacia" ? "Página vacía: agregá elementos desde la paleta." : "Plantilla \u201c" + pl.nombre + "\u201d cargada. Completá los elementos y quitá los que no uses.");
+          $("bc-bloques").scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+        grid.appendChild(card);
       });
-    });
+      box.appendChild(grid);
+    })();
+
+    /* --- ajustar foto: rotar, recortar, acercar, blanco y negro --- */
+    function ajustarFoto(im, done) {
+      if (!im.orig) im.orig = { bytes: im.bytes, url: im.url, type: im.type, name: im.name };
+      var st = { rot: 0, aspect: 0, zoom: 1, x: 50, y: 50, bn: false };
+      var ov = el("div", "bc-ajuste");
+      ov.innerHTML =
+        '<div class="bc-ajuste-caja">' +
+        '<div class="bc-ajuste-titulo">Ajustar foto <span class="bc-ajuste-nombre"></span></div>' +
+        '<div class="bc-ajuste-lienzo"><canvas></canvas></div>' +
+        '<div class="bc-ajuste-ctl">' +
+        '<div class="bc-ajuste-grupo"><span>Rotar</span><button type="button" data-rot="-90">⟲ 90°</button><button type="button" data-rot="90">⟳ 90°</button></div>' +
+        '<div class="bc-ajuste-grupo"><span>Recorte</span><button type="button" data-asp="0" aria-pressed="true">Libre</button><button type="button" data-asp="1.3333">4:3</button><button type="button" data-asp="1.5">3:2</button><button type="button" data-asp="1.7778">16:9</button><button type="button" data-asp="1">1:1</button><button type="button" data-asp="0.75">3:4</button></div>' +
+        '<div class="bc-ajuste-grupo"><span>Acercar</span><input type="range" min="1" max="3" step="0.05" value="1" data-k="zoom"></div>' +
+        '<div class="bc-ajuste-grupo"><span>Horizontal</span><input type="range" min="0" max="100" value="50" data-k="x"></div>' +
+        '<div class="bc-ajuste-grupo"><span>Vertical</span><input type="range" min="0" max="100" value="50" data-k="y"></div>' +
+        '<div class="bc-ajuste-grupo"><label class="be-check"><input type="checkbox" data-k="bn"> Blanco y negro</label></div>' +
+        '</div>' +
+        '<div class="be-actions"><button type="button" class="primary" data-act="ok">Aplicar</button><button type="button" data-act="orig">Volver a la original</button><button type="button" data-act="no">Cancelar</button></div>' +
+        "</div>";
+      ov.querySelector(".bc-ajuste-nombre").textContent = im.name;
+      document.body.appendChild(ov);
+      var canvas = ov.querySelector("canvas"), ctx = canvas.getContext("2d");
+      var img = new Image();
+
+      function geom(full) {
+        // imagen rotada
+        var rot = ((st.rot % 360) + 360) % 360;
+        var sw = img.naturalWidth, sh = img.naturalHeight;
+        var rw = rot % 180 ? sh : sw, rh = rot % 180 ? sw : sh;
+        // recorte
+        var cw = rw / st.zoom, ch = rh / st.zoom;
+        if (st.aspect) { if (cw / ch > st.aspect) cw = ch * st.aspect; else ch = cw / st.aspect; }
+        var cx = (rw - cw) * st.x / 100, cy = (rh - ch) * st.y / 100;
+        var scale = full ? Math.min(1, 1600 / Math.max(cw, ch)) : Math.min(1, 480 / Math.max(cw, ch));
+        return { rot: rot, rw: rw, rh: rh, cw: cw, ch: ch, cx: cx, cy: cy, scale: scale };
+      }
+      function draw(target, full) {
+        var g = geom(full), c = target.getContext("2d");
+        target.width = Math.round(g.cw * g.scale); target.height = Math.round(g.ch * g.scale);
+        c.save();
+        c.filter = st.bn ? "grayscale(1)" : "none";
+        c.scale(g.scale, g.scale);
+        c.translate(-g.cx, -g.cy);
+        c.translate(g.rw / 2, g.rh / 2);
+        c.rotate(g.rot * Math.PI / 180);
+        c.drawImage(img, -img.naturalWidth / 2, -img.naturalHeight / 2);
+        c.restore();
+      }
+      function refresh() { draw(canvas, false); }
+      img.onload = refresh;
+      img.src = im.url;
+
+      ov.querySelectorAll("[data-rot]").forEach(function (b) { b.addEventListener("click", function () { st.rot += parseInt(b.dataset.rot, 10); refresh(); }); });
+      ov.querySelectorAll("[data-asp]").forEach(function (b) {
+        b.addEventListener("click", function () {
+          st.aspect = parseFloat(b.dataset.asp);
+          ov.querySelectorAll("[data-asp]").forEach(function (x) { x.setAttribute("aria-pressed", x === b ? "true" : "false"); });
+          refresh();
+        });
+      });
+      ov.querySelectorAll("input[data-k]").forEach(function (i) {
+        i.addEventListener("input", function () { st[i.dataset.k] = i.type === "checkbox" ? i.checked : parseFloat(i.value); refresh(); });
+      });
+      function close() { if (ov.parentNode) ov.parentNode.removeChild(ov); }
+      ov.addEventListener("click", function (e) { if (e.target === ov) close(); });
+      ov.querySelector('[data-act="no"]').addEventListener("click", close);
+      ov.querySelector('[data-act="orig"]').addEventListener("click", function () {
+        im.bytes = im.orig.bytes; im.url = im.orig.url; im.type = im.orig.type; im.name = im.orig.name;
+        if (im.bytes) idbPut(im.id, im.bytes, im.type);
+        close(); done();
+      });
+      ov.querySelector('[data-act="ok"]').addEventListener("click", function () {
+        var out = document.createElement("canvas");
+        draw(out, true);
+        var isPng = im.type === "image/png";
+        out.toBlob(function (blob) {
+          if (!blob) { alert("No pude procesar la foto."); return; }
+          blob.arrayBuffer().then(function (buf) {
+            im.bytes = new Uint8Array(buf);
+            im.type = blob.type;
+            im.url = URL.createObjectURL(blob);
+            im.name = im.name.replace(/\.[^.]+$/, "") + (isPng ? ".png" : ".jpg");
+            idbPut(im.id, im.bytes, im.type);
+            close(); done();
+          });
+        }, isPng ? "image/png" : "image/jpeg", 0.85);
+      });
+    }
 
     /* --- formularios por tipo --- */
     function el(tag, cls, html) { var e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; }
@@ -236,6 +378,9 @@
           ci.addEventListener("input", function () { im.caption = ci.value; changed(); });
           fig.appendChild(ci);
           var row = el("div", "bc-imgbtns");
+          var aj = el("button", "small", "Ajustar"); aj.type = "button"; aj.title = "Rotar, recortar, blanco y negro";
+          aj.addEventListener("click", function () { ajustarFoto(im, function () { renderImgs(); changed(); }); });
+          row.appendChild(aj);
           var up = el("button", "small", "↑"); up.type = "button"; up.addEventListener("click", function () { if (i > 0) { b.data.imgs.splice(i - 1, 0, b.data.imgs.splice(i, 1)[0]); renderImgs(); changed(); } });
           var dn = el("button", "small", "↓"); dn.type = "button"; dn.addEventListener("click", function () { if (i < b.data.imgs.length - 1) { b.data.imgs.splice(i + 1, 0, b.data.imgs.splice(i, 1)[0]); renderImgs(); changed(); } });
           var rm = el("button", "small", "×"); rm.type = "button"; rm.addEventListener("click", function () { b.data.imgs.splice(i, 1); renderImgs(); changed(); });
@@ -462,6 +607,7 @@
         head.draggable = true;
         head.title = "Clic: plegar o desplegar · arrastrar: mover";
         head.appendChild(el("span", "bc-num", String(i + 1)));
+        head.appendChild(el("span", "bc-ico bc-ico-head", ICONOS[b.type]));
         head.appendChild(el("span", "bc-tipo", TIPOS[b.type].nombre));
         var sum = el("span", "bc-resumen"); sum.textContent = resumen(b); head.appendChild(sum);
         var btns = el("span", "bc-bloque-btns");
