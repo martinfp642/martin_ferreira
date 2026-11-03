@@ -343,7 +343,11 @@
     if (proceso.trim() || sueltas.length) {
       out.push("## Proceso paso a paso"); out.push("");
       if (proceso.trim()) { out.push(proceso.trim()); out.push(""); }
-      sueltas.forEach(function (im) { out.push(figure(im)); out.push(""); });
+      if (f.carrete && sueltas.length >= 2) {
+        out.push(carrete(sueltas)); out.push("");
+      } else {
+        sueltas.forEach(function (im) { out.push(figure(im)); out.push(""); });
+      }
     }
     if ((f.ok || "").trim() || (f.fail || "").trim()) {
       out.push("## Resultados"); out.push("");
@@ -354,6 +358,12 @@
     section("Archivos", f.archivos);
     section("Atribución y uso de IA", f.ia);
     return out.join("\n").replace(/\n{3,}/g, "\n\n");
+  }
+
+  function carrete(list, clase) {
+    return '<div class="' + (clase || "carrete") + '" markdown>\n\n' +
+      list.map(function (im) { return "![" + (im.caption || im.name) + "](" + im.rel + ")"; }).join("\n") +
+      "\n\n</div>";
   }
 
   function figure(im) {
@@ -480,7 +490,9 @@
     $("be-seccion").addEventListener("change", function () {
       $("be-seccion-nueva").style.display = this.value === "__nueva__" ? "block" : "none";
       updateRuta();
+      aplicarPistas();
     });
+    aplicarPistas();
     $("be-seccion-nueva").addEventListener("input", updateRuta);
 
     function currentGroup() {
@@ -516,7 +528,63 @@
       var f = {};
       fields.forEach(function (k) { f[k] = $("be-" + k).value; });
       f.seccion = currentGroup().name;
+      f.carrete = $("be-carrete").checked;
       return f;
+    }
+
+    /* Pistas (placeholder) según la sección elegida */
+    function PISTAS() { return {
+      tec: {
+        intro: "Qué quería fabricar o probar, con qué máquina y por qué.",
+        investigacion: "Manual de la máquina, parámetros que encontré, trabajos de compañeros, videos. Si usé IA, qué le pedí.",
+        proceso: "- Diseñé … en …\n- Preparé el archivo: …\n- Parámetros: potencia …, velocidad …\n- Primer intento: …",
+        ok: "Qué quedó bien: medidas, encastre, acabado.",
+        fail: "Qué falló: material quemado, pieza que no encaja… y qué creo que pasó.",
+        reflexion: "Qué cambiaría en los parámetros o en el diseño la próxima vez.",
+        archivos: "- [pieza.f3d](../files/pieza.f3d) · editable\n- [pieza.stl](../files/pieza.stl) · exportación"
+      },
+      dis: {
+        intro: "Para quién es el diseño, qué problema resuelve y qué restricciones tiene.",
+        investigacion: "Referencias e inspiración, con fuente y licencia de cada imagen.",
+        proceso: "- Boceto a mano: …\n- Primer modelo: …\n- Cambios entre la versión 1 y la 2: …",
+        ok: "Qué funcionó del diseño.",
+        fail: "Qué no funcionó y por qué lo descarté.",
+        reflexion: "Qué aprendí del proceso de diseño.",
+        archivos: "- [diseno.f3d](../files/diseno.f3d) · editable\n- [diseno.pdf](../files/diseno.pdf) · visualizable"
+      },
+      inn: {
+        intro: "Qué problema o pregunta quería explorar y en qué contexto.",
+        investigacion: "Qué leí, a quién consulté, qué datos junté. Enlaces y citas.",
+        proceso: "- Ideas que surgieron (incluidas las descartadas): …\n- Qué probé, con quién y cómo lo medí: …",
+        ok: "Lo que confirmó la prueba.",
+        fail: "Lo que no salió como esperaba.",
+        reflexion: "Qué aprendí y cuál sería el próximo paso.",
+        archivos: "- [notas.pdf](../files/notas.pdf)"
+      },
+      pro: {
+        intro: "Resumen de dos o tres frases para alguien que llega hoy al proyecto. Estado actual.",
+        investigacion: "Qué consulté esta semana.",
+        proceso: "- Lunes: …\n- Miércoles: …\n- Viernes: …\n- Decisiones y alternativas descartadas: …",
+        ok: "Avances concretos.",
+        fail: "Bloqueos y lo que falló.",
+        reflexion: "Qué sigue la semana que viene.",
+        archivos: "- [proyecto.f3d](../files/proyecto.f3d)\n- [codigo.ino](../files/codigo.ino)"
+      },
+      ref: {
+        intro: "Qué es el recurso, de quién es y con qué licencia.",
+        investigacion: "Enlace y cómo lo encontré.",
+        proceso: "Cómo lo usé, paso a paso si hace falta.",
+        ok: "Para qué me sirvió.",
+        fail: "Limitaciones o lo que no funcionó.",
+        reflexion: "En qué entrada lo usé.",
+        archivos: ""
+      }
+    }; }
+    function aplicarPistas() {
+      var n = (currentGroup().name || "").toLowerCase();
+      var k = /tecnolog|fabric/.test(n) ? "tec" : /dise/.test(n) ? "dis" : /innov/.test(n) ? "inn" : /proyecto/.test(n) ? "pro" : /refer/.test(n) ? "ref" : "tec";
+      var p = PISTAS()[k];
+      Object.keys(p).forEach(function (key) { $("be-" + key).placeholder = p[key]; });
     }
     function saveDraft() {
       try {
@@ -615,6 +683,16 @@
     setupDrop("be-drop", "be-files", imgsNueva, "be-images", "be-proceso", function (im) {
       return imageRel(im, pagePath(), currentGroup());
     });
+    function bindInsert(id, list, textareaId, clase) {
+      $(id).addEventListener("click", function () {
+        if (list.length < 1) { alert("Primero cargá fotos."); return; }
+        insertAtCursor($(textareaId), "\n" + carrete(list, clase) + "\n");
+      });
+    }
+    bindInsert("be-ins-carrete", imgsNueva, "be-proceso", "carrete");
+    bindInsert("be-ins-galeria", imgsNueva, "be-proceso", "galeria tres");
+    bindInsert("be-ins-carrete2", imgsEdit, "be-contenido", "carrete");
+    bindInsert("be-ins-galeria2", imgsEdit, "be-contenido", "galeria tres");
     setupDrop("be-drop2", "be-files2", imgsEdit, "be-images2", "be-contenido", function (im) {
       var p = editFile ? editFile.path : "docs/x.md";
       var dir = dirname(p).replace(/^docs\/?/, "") || "inicio";

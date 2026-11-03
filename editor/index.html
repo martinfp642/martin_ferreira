@@ -430,6 +430,18 @@
       
       
 
+
+  <li class="md-nav__item">
+    <a href="../plantillas/" title="Plantillas" class="md-nav__link">
+      Plantillas
+    </a>
+  </li>
+
+    
+      
+      
+      
+
   
 
 
@@ -485,6 +497,10 @@
                 <h1 id="editor-de-bitacora">Editor de bitácora<a class="headerlink" href="#editor-de-bitacora" title="Permanent link">&para;</a></h1>
 <p class="meta">Escribir · subir imágenes · publicar en el repositorio</p>
 
+<div class="admonition note">
+<p class="admonition-title">Plantillas</p>
+<p>Para una entrada con carrete, galería, comparación y ficha de datos, copiá la plantilla de tu sección desde <a href="../plantillas/">Plantillas</a> en la pestaña <strong>Editar archivo</strong>.</p>
+</div>
 <div id="bitacora-editor" class="be" data-owner="martinfp642" data-repo="martin_ferreira" data-branch="main" data-site="https://martinfp642.github.io/martin_ferreira/">
 
 <div class="be-toolbar">
@@ -553,6 +569,11 @@
     <div class="be-drop" id="be-drop">Arrastrá fotos o capturas acá, o hacé clic para elegirlas</div>
     <input type="file" id="be-files" accept="image/*" multiple style="display:none">
     <div class="be-images" id="be-images"></div>
+    <div class="be-actions" style="margin:.6rem 0 0">
+      <button type="button" class="small" id="be-ins-carrete">Insertar carrete con todas</button>
+      <button type="button" class="small" id="be-ins-galeria">Insertar galería con todas</button>
+    </div>
+    <label class="be-check"><input type="checkbox" id="be-carrete" checked> Las fotos que no inserte en el texto van juntas en un carrete al final del proceso</label>
   </div>
 </div>
 
@@ -634,6 +655,10 @@
   <div class="be-drop" id="be-drop2">Arrastrá imágenes acá, o hacé clic para elegirlas</div>
   <input type="file" id="be-files2" accept="image/*" multiple style="display:none">
   <div class="be-images" id="be-images2"></div>
+  <div class="be-actions" style="margin:.6rem 0 0">
+    <button type="button" class="small" id="be-ins-carrete2">Insertar carrete con todas</button>
+    <button type="button" class="small" id="be-ins-galeria2">Insertar galería con todas</button>
+  </div>
 </div>
 
 <div class="be-field">
@@ -713,7 +738,7 @@
 <div class="md-source-date">
   <small>
     
-      Last update: <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="November 2, 2026 23:51:38 UTC">November 2, 2026</span>
+      Last update: <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="November 3, 2026 00:24:43 UTC">November 3, 2026</span>
     
   </small>
 </div>
@@ -736,7 +761,7 @@
     <div class="md-footer-nav">
       <nav class="md-footer-nav__inner md-grid" aria-label="Footer">
         
-          <a href="../metodo/documentar/" title="Método" class="md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+          <a href="../plantillas/" title="Plantillas" class="md-footer-nav__link md-footer-nav__link--prev" rel="prev">
             <div class="md-footer-nav__button md-icon">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
             </div>
@@ -745,7 +770,7 @@
                 <span class="md-footer-nav__direction">
                   Previous
                 </span>
-                Método
+                Plantillas
               </div>
             </div>
           </a>
@@ -835,6 +860,8 @@
           }, typeof search !== "undefined" && search)
         })
       </script>
+      
+        <script src="../javascripts/bitacora.js"></script>
       
         <script src="../javascripts/editor.js"></script>
       
