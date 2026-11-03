@@ -1695,3 +1695,23 @@ body.be-fullscreen-body {
   padding: 1.5rem;
   text-align: center;
 }
+
+/* Archivos: enlace externo (Google Drive, etc.) */
+.bc-link {
+  display: grid;
+  grid-template-columns: 1fr 2fr auto;
+  gap: 0.4rem;
+  align-items: center;
+  margin: 0.4rem 0 0.2rem;
+}
+
+.bc-files .hint {
+  margin-bottom: 0.8rem;
+}
+
+@media (max-width: 44.9375em) {
+  .bc-link,
+  .bc-rows .bc-row {
+    grid-template-columns: 1fr;
+  }
+}

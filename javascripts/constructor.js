@@ -8,7 +8,8 @@
   "use strict";
 
   var KEY_DRAFT = "bitacora.constructor";
-  var MAX_FILE = 10 * 1024 * 1024;
+  var AVISO_FILE = 10 * 1024 * 1024;   // la guía pide consultar a partir de acá
+  var MAX_FILE = 50 * 1024 * 1024;     // GitHub rechaza archivos de más de 100 MB
 
   /* ------------------------------------------------------------------ */
   /* IndexedDB para guardar las fotos del borrador                       */
@@ -294,7 +295,7 @@
 
     function filesUI(b) {
       var box = el("div", "bc-files");
-      var drop = el("div", "be-drop", "Arrastrá los archivos acá (.f3d, .stl, .scad, .ino, .pdf…), o hacé clic");
+      var drop = el("div", "be-drop", "Arrastrá los archivos acá (.f3d, .stl, .scad, .ino, .pdf…), o hacé clic · hasta 50 MB");
       var fi = el("input"); fi.type = "file"; fi.multiple = true; fi.style.display = "none";
       drop.addEventListener("click", function () { fi.click(); });
       drop.addEventListener("dragover", function (e) { e.preventDefault(); drop.classList.add("over"); });
@@ -303,7 +304,8 @@
       fi.addEventListener("change", function () { addFiles(fi.files); fi.value = ""; });
       function addFiles(files) {
         Array.prototype.forEach.call(files, function (file) {
-          if (file.size > MAX_FILE) { alert(file.name + " pesa " + B.fmtSize(file.size) + ". Más de 10 MB: consultá opciones de compresión o almacenamiento antes de subirlo."); return; }
+          if (file.size > MAX_FILE) { alert(file.name + " pesa " + B.fmtSize(file.size) + ". Más de 50 MB no entra en el repositorio: subilo a Google Drive y agregá el enlace."); return; }
+          if (file.size > AVISO_FILE && !confirm(file.name + " pesa " + B.fmtSize(file.size) + ". La guía pide consultar antes de subir más de 10 MB al repositorio; la alternativa es Google Drive con un enlace. ¿Subirlo igual a GitHub?")) return;
           file.arrayBuffer().then(function (buf) {
             var name = B.slugify(file.name.replace(/\.[^.]+$/, "")) + (file.name.match(/\.[^.]+$/) || [""])[0].toLowerCase();
             var f = { id: uid(), name: name, desc: "", bytes: new Uint8Array(buf) };
@@ -313,21 +315,39 @@
           });
         });
       }
+      /* enlace externo: Google Drive, YouTube, Thingiverse… */
+      var linkBox = el("div", "bc-link");
+      var lName = el("input"); lName.type = "text"; lName.placeholder = "Nombre (ej.: soporte.f3d en Drive)";
+      var lUrl = el("input"); lUrl.type = "url"; lUrl.placeholder = "https://drive.google.com/…";
+      var lBtn = el("button", "small", "+ Agregar enlace"); lBtn.type = "button";
+      lBtn.addEventListener("click", function () {
+        var url = lUrl.value.trim();
+        if (!/^https?:\/\//.test(url)) { alert("Pegá la dirección completa del enlace (empieza con https://)."); return; }
+        var name = lName.value.trim() || url.replace(/^https?:\/\//, "").split("/")[0];
+        b.data.files.push({ id: uid(), name: name, desc: "", url: url, bytes: null });
+        lName.value = ""; lUrl.value = "";
+        draw(); changed();
+      });
+      linkBox.appendChild(lName); linkBox.appendChild(lUrl); linkBox.appendChild(lBtn);
+      var linkHint = el("div", "hint be-kv", "Para archivos grandes o videos: subilos a Google Drive, compartilos con \u201ccualquier persona con el enlace\u201d y pegá el enlace acá.");
+
       var list = el("div", "bc-rows");
       function draw() {
         list.innerHTML = "";
         b.data.files.forEach(function (f, i) {
           var row = el("div", "bc-row");
-          var nm = el("span", "bc-filename", B.escapeHtml(f.name) + (f.bytes ? " · " + B.fmtSize(f.bytes.length) : " · ya en el repositorio"));
+          var tag = f.url ? (/drive\.google|docs\.google/.test(f.url) ? "Drive" : "Enlace") : (f.bytes ? B.fmtSize(f.bytes.length) : "en el repositorio");
+          var nm = el("span", "bc-filename", B.escapeHtml(f.name) + ' <span class="tag">' + tag + "</span>");
+          if (f.url) { var a = el("a"); a.href = f.url; a.target = "_blank"; a.rel = "noopener"; a.textContent = " ↗"; nm.appendChild(a); }
           row.appendChild(nm);
-          row.appendChild(input(f.desc, "Descripción (editable original, exportación…)", function (v) { f.desc = v; }));
+          row.appendChild(input(f.desc, f.url ? "Descripción (qué es, licencia)" : "Descripción (editable original, exportación…)", function (v) { f.desc = v; }));
           var rm = el("button", "small", "×"); rm.type = "button"; rm.addEventListener("click", function () { b.data.files.splice(i, 1); draw(); changed(); });
           row.appendChild(rm);
           list.appendChild(row);
         });
       }
       draw();
-      box.appendChild(list); box.appendChild(drop); box.appendChild(fi);
+      box.appendChild(list); box.appendChild(drop); box.appendChild(fi); box.appendChild(linkBox); box.appendChild(linkHint);
       return box;
     }
 
@@ -462,7 +482,7 @@
             break;
           }
           case "codigo": if (d.text.trim()) out.push("```" + (d.lang || ""), d.text.replace(/\s+$/, ""), "```", ""); break;
-          case "archivos": if (d.files.length) out.push(d.files.map(function (f) { return "- [" + f.name + "](" + rel(fileRepoPath(f)) + ")" + (f.desc ? " · " + f.desc : ""); }).join("\n"), ""); break;
+          case "archivos": if (d.files.length) out.push(d.files.map(function (f) { return "- [" + f.name + "](" + (f.url ? f.url : rel(fileRepoPath(f))) + ")" + (f.desc ? " · " + f.desc : ""); }).join("\n"), ""); break;
         }
         partes.push({ type: b.type, nivel: b.type === "titulo" ? (d.nivel === "h3" ? 3 : 2) : 0, out: out });
       });
@@ -489,7 +509,7 @@
           var d = {};
           Object.keys(b.data).forEach(function (k) {
             if (k === "imgs") d.imgs = b.data.imgs.map(function (im) { return { name: im.name, caption: im.caption || "", repoPath: imgRepoPath(im) }; });
-            else if (k === "files") d.files = b.data.files.map(function (f) { return { name: f.name, desc: f.desc || "", repoPath: fileRepoPath(f) }; });
+            else if (k === "files") d.files = b.data.files.map(function (f) { return f.url ? { name: f.name, desc: f.desc || "", url: f.url } : { name: f.name, desc: f.desc || "", repoPath: fileRepoPath(f) }; });
             else d[k] = b.data[k];
           });
           return { type: b.type, data: d };
@@ -556,7 +576,7 @@
             });
           } else if (k === "files") {
             b.data.files = bb.data.files.map(function (f) {
-              var o = { id: f.id || uid(), name: f.name, desc: f.desc || "", bytes: null, repoPath: f.repoPath };
+              var o = { id: f.id || uid(), name: f.name, desc: f.desc || "", bytes: null, repoPath: f.repoPath, url: f.url || null };
               if (fromDraft && f.hasBytes) pending.push(idbGet(o.id).then(function (r) { if (r) o.bytes = r.bytes; }));
               return o;
             });
