@@ -17,15 +17,15 @@
       // una figura por imagen, en el mismo orden.
       imgs.forEach(function (img) {
         var fig = document.createElement("figure");
+        box.insertBefore(fig, child);
         fig.appendChild(img);
         if (img.alt) {
           var cap = document.createElement("figcaption");
           cap.textContent = img.alt;
           fig.appendChild(cap);
         }
-        box.insertBefore(fig, child);
       });
-      box.removeChild(child);
+      if (child.parentNode === box) box.removeChild(child);
     });
   }
 
