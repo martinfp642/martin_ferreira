@@ -303,6 +303,13 @@
       return r.json().catch(function () { return {}; }).then(function (data) {
         if (!r.ok) {
           var msg = (data && data.message) || r.statusText;
+          if (r.status === 403 && /not accessible by personal access token/i.test(msg)) {
+            msg += ". El token puede leer pero no escribir: en github.com/settings/personal-access-tokens abrí el token, marcá el repositorio en Repository access y poné Contents en \u201cRead and write\u201d. Después, Mi cuenta → Conectar.";
+          } else if (r.status === 403 && /rate limit/i.test(msg)) {
+            msg += ". GitHub limita las lecturas sin cuenta: conectá tu token o esperá unos minutos.";
+          } else if (r.status === 401) {
+            msg += ". El token venció o está mal copiado: generá uno nuevo y pegalo en Mi cuenta.";
+          }
           var err = new Error(r.status + " · " + msg);
           err.status = r.status;
           throw err;
