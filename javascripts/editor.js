@@ -1186,12 +1186,26 @@
       if (p && !/\.md$/i.test(p)) { box.innerHTML = '<p class="be-kv">Sin vista previa para este tipo de archivo.</p>'; return; }
       renderMd(md, imgsEdit, p ? pageUrl(cfg.site, p) : null).then(function (html) {
         box.innerHTML = html;
+        marcarImagenesRotas(box);
       }).catch(function (e) { box.innerHTML = '<p class="be-kv">' + escapeHtml(e.message) + "</p>"; });
     }
     $("be-contenido").addEventListener("input", function () {
       if (editFile) setDirty(true);
       schedulePreview();
     });
+
+    /* imágenes que todavía no están publicadas (o con la ruta mal): aviso en lugar del ícono roto */
+    function marcarImagenesRotas(box) {
+      box.querySelectorAll("img").forEach(function (img) {
+        img.addEventListener("error", function () {
+          var aviso = document.createElement("span");
+          aviso.className = "be-img-rota";
+          var src = img.getAttribute("src") || "";
+          aviso.textContent = "Imagen no encontrada: " + src.replace(cfg.site, "") + " · si la subiste hace menos de dos minutos, el sitio todavía la está publicando; si no, revisá la ruta en Materiales.";
+          if (img.parentNode) img.parentNode.replaceChild(aviso, img);
+        }, { once: true });
+      });
+    }
 
     /* vista: texto, dividido, vista previa */
     function setView(v) {
