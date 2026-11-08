@@ -138,6 +138,7 @@
 
     var $ = function (id) { return document.getElementById(id); };
     var blocks = [];
+    var ultimasPartes = [];
     var nextId = 1;
     var previewTimer = null;
     var ORIGEN = null; // ruta de la página abierta desde el repositorio
@@ -738,6 +739,7 @@
       var meta = (gname && semana.indexOf(gname) >= 0) ? semana : [semana, gname].filter(Boolean).join(" · ");
       if (meta) out.push('<p class="meta">' + B.escapeHtml(meta) + "</p>", "");
       var partes = [];
+      ultimasPartes = partes;
       blocks.forEach(function (b) {
         var out = [];
         var d = b.data, imgs = d.imgs || [];
@@ -789,7 +791,7 @@
             }
             break;
         }
-        partes.push({ type: b.type, nivel: b.type === "titulo" ? (d.nivel === "h3" ? 3 : 2) : 0, out: out });
+        partes.push({ id: b.id, type: b.type, nivel: b.type === "titulo" ? (d.nivel === "h3" ? 3 : 2) : 0, out: out });
       });
       // Un título sin contenido hasta el siguiente título del mismo nivel o superior no se escribe
       partes.forEach(function (pt, i) {
@@ -1119,6 +1121,25 @@
         log("Página cargada desde el repositorio. Las fotos que ya están subidas no hace falta volver a cargarlas.");
       }
     };
+
+    /* doble clic en la vista previa: abrir y enfocar el elemento que la genera */
+    $("bc-preview").addEventListener("dblclick", function (e) {
+      var el = B.objetivoDe(e.target), claves = B.clavesDe(el), hallado = null;
+      for (var k = 0; k < claves.length && !hallado; k++) {
+        var c = claves[k];
+        for (var i = 0; i < ultimasPartes.length; i++) {
+          var txt = ultimasPartes[i].out.join("\n");
+          if ((c.ruta && txt.indexOf(c.ruta) >= 0) || (c.texto && B.normalizar(txt).indexOf(c.texto) >= 0)) { hallado = ultimasPartes[i].id; break; }
+        }
+      }
+      if (!hallado) { log("Ese elemento no corresponde a ningún bloque (puede ser el título o la línea de metadatos de arriba)."); $("bc-titulo").focus(); return; }
+      var b = blocks.filter(function (x) { return x.id === hallado; })[0];
+      if (b && !b.open) { b.open = true; render(); }
+      focusBlock(hallado);
+      var card = root.querySelector('[data-id="' + hallado + '"]');
+      if (card) { card.classList.remove("destacado"); void card.offsetWidth; card.classList.add("destacado"); }
+      e.preventDefault();
+    });
 
     $("bc-previa-toggle").addEventListener("click", function () {
       var off = $("bc-work").classList.toggle("sin-previa");

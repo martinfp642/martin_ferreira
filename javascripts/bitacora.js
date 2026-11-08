@@ -113,6 +113,7 @@
     root.querySelectorAll(".carrete img, .galeria img, .comparar img, .hero-shot img").forEach(function (img) {
       if (img.dataset.zoom) return;
       img.dataset.zoom = "1";
+      if (img.closest(".be-preview")) return; // en la vista previa del editor el doble clic lleva al texto
       img.addEventListener("click", function (e) {
         e.preventDefault();
         openLightbox(img);
