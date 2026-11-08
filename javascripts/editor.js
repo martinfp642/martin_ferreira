@@ -1578,11 +1578,19 @@
         var card = document.createElement("div");
         card.className = "mat-item";
         var url = cfg.site + it.path.replace(/^docs\//, "");
+        var principal = matFragmento(it, it.tipo === "imagen" ? "linea" : it.tipo === "stl" ? "stl" : "enlace");
         card.innerHTML =
           (it.tipo === "imagen" ? '<img class="mat-mini" src="' + url + '" alt="">' : '<span class="mat-mini fm-ext">' + escapeHtml((it.name.match(/\.([^.]+)$/) || ["", "?"])[1].toUpperCase().slice(0, 4)) + "</span>") +
           '<span class="mat-nombre">' + escapeHtml(it.name) + ' <span class="tag">' + fmtSize(it.size) + "</span></span>" +
+          '<code class="mat-snippet" title="Clic para copiar">' + escapeHtml(principal) + "</code>" +
           '<span class="mat-botones"></span>';
+        card.querySelector(".mat-snippet").addEventListener("click", function () {
+          navigator.clipboard.writeText(principal).then(function () { log("be-log2", "Copiado: " + principal); }, function () { log("be-log2", "No pude copiar; seleccioná el texto a mano.", true); });
+        });
         var btns = card.querySelector(".mat-botones");
+        var cp = document.createElement("button"); cp.type = "button"; cp.className = "small primary"; cp.textContent = "Copiar";
+        cp.addEventListener("click", function () { card.querySelector(".mat-snippet").click(); });
+        btns.appendChild(cp);
         var formatos = it.tipo === "imagen" ? [["figura", "Imagen"], ["linea", "Carrete / galería"], ["hero", "Hero shot"]] : it.tipo === "stl" ? [["stl", "Visor 3D"], ["enlace", "Enlace"]] : [["enlace", "Enlace"]];
         formatos.forEach(function (f) {
           var b = document.createElement("button"); b.type = "button"; b.className = "small"; b.textContent = f[1];
@@ -1602,6 +1610,18 @@
     });
     $("mat-cerrar").addEventListener("click", function () { matBox.classList.remove("abierto"); $("be-mat-toggle").setAttribute("aria-pressed", "false"); });
     $("mat-modulo").addEventListener("change", matLista);
+    $("mat-copiar-todo").addEventListener("click", function () {
+      var mod = modulos().filter(function (m) { return m.nombre === $("mat-modulo").value; })[0];
+      if (!mod) { log("be-log2", "Elegí primero la carpeta del módulo.", true); return; }
+      var lineas = [];
+      mod.items.forEach(function (it) {
+        if (it.tipo === "imagen") lineas.push(matFragmento(it, "linea"));
+        else if (it.tipo === "stl") { lineas.push(matFragmento(it, "stl")); lineas.push("- " + matFragmento(it, "enlace")); }
+        else lineas.push("- " + matFragmento(it, "enlace"));
+      });
+      var texto = lineas.join("\n");
+      navigator.clipboard.writeText(texto).then(function () { log("be-log2", "Copiados " + mod.items.length + " enlaces de " + mod.nombre + ":\n" + texto); }, function () { log("be-log2", "No pude copiar; usá los botones de cada archivo.", true); });
+    });
     $("mat-ir-archivos").addEventListener("click", function () {
       var nombre = $("mat-modulo").value;
       root.querySelector('.be-toolbar [data-panel="archivos"]').click();

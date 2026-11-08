@@ -300,3 +300,16 @@ body.app {
 .sel-item input { width: 1rem; height: 1rem; accent-color: #000; }
 .sel-item:has(input:checked) { background: #f5f5f5; outline-width: 2px; }
 .sel-lista { max-height: 50vh; margin-top: 0.4rem; }
+
+.mat-item .mat-snippet {
+  grid-column: 1 / -1;
+  font-size: 0.6rem;
+  background: #f5f5f5;
+  padding: 0.35em 0.5em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: copy;
+}
+
+.mat-item .mat-snippet:hover { background: #000; color: #fff; }
