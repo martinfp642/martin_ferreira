@@ -212,7 +212,7 @@
 
       var scene = new THREE.Scene();
       scene.background = new THREE.Color(0xffffff);
-      var mat = new THREE.MeshPhongMaterial({ color: 0xdedede, specular: 0x333333, shininess: 18, flatShading: true });
+      var mat = new THREE.MeshPhongMaterial({ color: 0xdedede, specular: 0x333333, shininess: 18, flatShading: true, side: THREE.DoubleSide });
       var mesh = new THREE.Mesh(geo, mat);
       var edges = new THREE.LineSegments(new THREE.EdgesGeometry(geo, 28), new THREE.LineBasicMaterial({ color: 0x000000 }));
       var grupo = new THREE.Group(); grupo.add(mesh); grupo.add(edges);
