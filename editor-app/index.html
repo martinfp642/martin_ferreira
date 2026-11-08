@@ -27,6 +27,7 @@
   <button type="button" data-panel="nueva"><span class="bc-ico">☰</span>Formulario</button>
   <button type="button" data-panel="editar"><span class="bc-ico">&lt;/&gt;</span>Markdown</button>
   <button type="button" data-panel="archivos"><span class="bc-ico">⇩</span>Archivos</button>
+  <button type="button" data-panel="menu"><span class="bc-ico">≡</span>Menú</button>
   <button type="button" data-panel="cuenta"><span class="bc-ico">●</span>Mi cuenta</button>
   <button type="button" data-panel="ayuda"><span class="bc-ico">?</span>Ayuda</button>
   <button type="button" class="be-status" id="be-status" title="Conectar o desconectar la cuenta">Sin conexión</button>
@@ -421,6 +422,23 @@
 
 </section>
 
+<!-- ============================ MENÚ ============================ -->
+<section class="be-panel" data-panel="menu">
+
+<p>El menú lateral del sitio, tal como está en <code>mkdocs.yml</code>. Cambiá los nombres de las secciones y de las páginas, y ordenalos con las flechas. Esto cambia solo lo que se ve en el menú; el título dentro de cada página se edita en Markdown.</p>
+
+<div class="menu-arbol" id="menu-arbol"><p class="be-kv">Cargando el menú…</p></div>
+
+<div class="be-actions">
+  <button type="button" class="primary" id="menu-guardar">Guardar menú</button>
+  <button type="button" id="menu-recargar">Descartar cambios</button>
+  <span class="be-dirty" id="menu-dirty"></span>
+</div>
+
+<div class="be-log" id="menu-log">Sin cuenta conectada podés ver el menú; para guardar hace falta conectarla.</div>
+
+</section>
+
 <!-- ============================ MI CUENTA ============================ -->
 <section class="be-panel" data-panel="cuenta">
 
@@ -478,6 +496,12 @@
   <li>Cada archivo tiene <strong>Copiar</strong> (el fragmento de Markdown: imagen, visor 3D o enlace) e <strong>Insertar</strong>, que lo pega en la página abierta en Markdown con la ruta correcta.</li>
   <li>En la pestaña Markdown, el botón <strong>Materiales</strong> abre el mismo contenido sin cambiar de pestaña: elegís la carpeta del módulo y cada archivo ofrece sus formatos (imagen con pie, línea para carrete o galería, enlace, visor 3D). <strong>Armar borrador con todo</strong> crea una página nueva con todas las fotos en un carrete, las piezas 3D en su visor y los demás archivos como enlaces.</li>
   <li>En Armar página, los elementos con fotos o piezas 3D tienen <strong>Elegir del repositorio</strong> para usar material ya subido sin volver a cargarlo.</li>
+</ul>
+
+<h3>Menú</h3>
+<ul>
+  <li>La pestaña <strong>Menú</strong> muestra el menú lateral del sitio. Podés cambiar el nombre de una sección o de una página (lo que se ve en el lateral) y moverlas con las flechas. <strong>Guardar menú</strong> hace el commit y el sitio se reconstruye.</li>
+  <li>El nombre de la carpeta de archivos y el título dentro de la página no cambian con esto; el título se edita en Markdown.</li>
 </ul>
 
 <h3>Markdown</h3>

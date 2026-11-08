@@ -515,7 +515,7 @@
     if (nb.start < 0) return out;
     if (groupName == null) {
       for (var i = nb.start + 1; i < nb.end; i++) {
-        var m = nb.lines[i].match(/^  - (.+?):\s*(\S*)\s*$/);
+        var m = nb.lines[i].match(/^  - (.+?):\s*(.*?)\s*$/);
         if (m) out.push({ title: m[1].replace(/^["']|["']$/g, ""), path: m[2] || null, line: i, group: !m[2] });
       }
       return out;
@@ -524,7 +524,7 @@
     if (!g) return out;
     for (var j = g.line + 1; j < nb.end; j++) {
       if (!/^ {6}/.test(nb.lines[j])) break;
-      var c = nb.lines[j].match(/^ {6}- (.+?):\s*(\S+)\s*$/);
+      var c = nb.lines[j].match(/^ {6}- (.+?):\s*(\S.*?)\s*$/);
       if (c) out.push({ title: c[1].replace(/^["']|["']$/g, ""), path: c[2], line: j });
     }
     return out;
@@ -573,10 +573,39 @@
         var b = tops2.filter(function (x) { return x.title === opts.newGroupBefore; })[0];
         if (b) where = b.line;
       } else {
-        for (var i = nb.start + 1; i < nb.end; i++) { if (/^  - Editor:/.test(lines[i])) { where = i; break; } }
+        for (var i = nb.start + 1; i < nb.end; i++) { if (/^  - "?Editor"?:/.test(lines[i])) { where = i; break; } }
       }
       lines.splice(where, 0, "  - " + yamlQuote(opts.group) + ":", child);
     }
+    return lines.join("\n");
+  }
+
+  /* Modelo editable del menú: [{type:"page",title,path} | {type:"group",title,children:[{title,path}]}] */
+  function parseNavModel(yaml) {
+    var nb = navBlock(yaml), model = [];
+    if (nb.start < 0) return model;
+    for (var i = nb.start + 1; i < nb.end; i++) {
+      var l = nb.lines[i], m;
+      if ((m = l.match(/^  - (.+?):\s*(.*?)\s*$/))) {
+        var title = m[1].replace(/^["']|["']$/g, "").replace(/\\"/g, '"');
+        if (m[2]) model.push({ type: "page", title: title, path: m[2] });
+        else model.push({ type: "group", title: title, children: [] });
+      } else if ((m = l.match(/^ {6}- (.+?):\s*(\S.*?)\s*$/)) && model.length && model[model.length - 1].type === "group") {
+        model[model.length - 1].children.push({ title: m[1].replace(/^["']|["']$/g, "").replace(/\\"/g, '"'), path: m[2] });
+      }
+    }
+    return model;
+  }
+  function buildNavModel(yaml, model) {
+    var nb = navBlock(yaml);
+    if (nb.start < 0) throw new Error("No encontré el bloque nav: en mkdocs.yml");
+    var out = [];
+    model.forEach(function (e) {
+      if (e.type === "page") out.push("  - " + yamlQuote(e.title) + ": " + e.path);
+      else { out.push("  - " + yamlQuote(e.title) + ":"); e.children.forEach(function (c) { out.push("      - " + yamlQuote(c.title) + ": " + c.path); }); }
+    });
+    var lines = nb.lines.slice();
+    lines.splice(nb.start + 1, nb.end - nb.start - 1, out.join("\n"));
     return lines.join("\n");
   }
 
@@ -1611,6 +1640,71 @@
         return fmCargar();
       }).catch(function (e) { fmLog("No se subió: " + e.message, true); }).then(function () { btn.disabled = false; });
     });
+
+    /* --- menú: renombrar y ordenar secciones y páginas --- */
+    var menuModel = null, menuDirty = false;
+    function menuLog(m, err) { log("menu-log", m, err); }
+    function menuSetDirty(v) { menuDirty = v; $("menu-dirty").textContent = v ? "Cambios sin guardar" : ""; }
+    function menuCargar() {
+      var p = navYaml ? Promise.resolve() : loadNav();
+      return p.then(function () { menuModel = parseNavModel(navYaml); menuSetDirty(false); menuDibujar(); })
+        .catch(function (e) { $("menu-arbol").innerHTML = '<p class="be-kv">No pude leer el menú: ' + escapeHtml(e.message) + "</p>"; });
+    }
+    function menuMover(arr, i, dir) { var j = i + dir; if (j < 0 || j >= arr.length) return; var t = arr[i]; arr[i] = arr[j]; arr[j] = t; menuSetDirty(true); menuDibujar(); }
+    function menuFila(item, arr, i, nivel) {
+      var row = document.createElement("div");
+      row.className = "menu-fila" + (item.type === "group" ? " grupo" : "") + (nivel ? " hijo" : "");
+      var ico = document.createElement("span"); ico.className = "bc-ico"; ico.textContent = item.type === "group" ? "▸" : "¶"; row.appendChild(ico);
+      var inp = document.createElement("input"); inp.type = "text"; inp.value = item.title; inp.title = "Nombre que se ve en el menú";
+      inp.addEventListener("input", function () { item.title = inp.value; menuSetDirty(true); });
+      row.appendChild(inp);
+      var ruta = document.createElement("span"); ruta.className = "menu-ruta"; ruta.textContent = item.type === "group" ? item.children.length + (item.children.length === 1 ? " página" : " páginas") : item.path; row.appendChild(ruta);
+      var btns = document.createElement("span"); btns.className = "menu-btns";
+      var up = document.createElement("button"); up.type = "button"; up.className = "small"; up.textContent = "↑"; up.addEventListener("click", function () { menuMover(arr, i, -1); });
+      var dn = document.createElement("button"); dn.type = "button"; dn.className = "small"; dn.textContent = "↓"; dn.addEventListener("click", function () { menuMover(arr, i, 1); });
+      btns.appendChild(up); btns.appendChild(dn);
+      if (item.type === "page" && nivel) {
+        var sacar = document.createElement("button"); sacar.type = "button"; sacar.className = "small"; sacar.textContent = "↥ nivel principal"; sacar.title = "Sacar de la sección";
+        sacar.addEventListener("click", function () { arr.splice(i, 1); menuModel.push({ type: "page", title: item.title, path: item.path }); menuSetDirty(true); menuDibujar(); });
+        btns.appendChild(sacar);
+      }
+      if (item.type === "page" && !nivel && menuModel.some(function (g) { return g.type === "group"; })) {
+        var sel = document.createElement("select"); sel.className = "menu-mover";
+        var o0 = document.createElement("option"); o0.value = ""; o0.textContent = "Mover a sección…"; sel.appendChild(o0);
+        menuModel.forEach(function (g, gi) { if (g.type === "group") { var o = document.createElement("option"); o.value = gi; o.textContent = g.title; sel.appendChild(o); } });
+        sel.addEventListener("change", function () { if (sel.value === "") return; var g = menuModel[parseInt(sel.value, 10)]; arr.splice(i, 1); g.children.push({ title: item.title, path: item.path }); menuSetDirty(true); menuDibujar(); });
+        btns.appendChild(sel);
+      }
+      row.appendChild(btns);
+      return row;
+    }
+    function menuDibujar() {
+      var box = $("menu-arbol");
+      box.innerHTML = "";
+      if (!menuModel) return;
+      menuModel.forEach(function (item, i) {
+        box.appendChild(menuFila(item, menuModel, i, 0));
+        if (item.type === "group") item.children.forEach(function (c, k) { c.type = "page"; box.appendChild(menuFila(c, item.children, k, 1)); });
+      });
+    }
+    $("menu-recargar").addEventListener("click", function () { navYaml = null; menuCargar().then(function () { menuLog("Menú recargado desde el repositorio."); }); });
+    $("menu-guardar").addEventListener("click", function () {
+      if (!menuModel) return;
+      if (!gh.token) { menuLog("Conectá tu cuenta (pestaña Mi cuenta) para guardar el menú.", true); return; }
+      if (menuModel.some(function (e) { return !e.title.trim() || (e.type === "group" && e.children.some(function (c) { return !c.title.trim(); })); })) { menuLog("Hay un nombre vacío.", true); return; }
+      var btn = this; btn.disabled = true;
+      loadNav().then(function () {
+        var y = buildNavModel(navYaml, menuModel);
+        if (y === navYaml) { menuLog("No hay cambios que guardar."); return null; }
+        return gh.commit([{ path: "mkdocs.yml", text: y }], "Menú: nombres y orden de secciones\n\nDesde el editor de la bitácora.", function (s) { menuLog(s + "…"); });
+      }).then(function (c) {
+        if (!c) return;
+        navYaml = null;
+        return loadNav().then(function () { menuModel = parseNavModel(navYaml); menuSetDirty(false); menuDibujar(); menuLog("Menú guardado en el commit " + c.sha.slice(0, 7) + ". El sitio lo muestra en uno o dos minutos."); });
+      }).catch(function (e) { menuLog("No se guardó: " + e.message, true); }).then(function () { btn.disabled = false; });
+    });
+    root.querySelector('.be-toolbar [data-panel="menu"]').addEventListener("click", function () { if (!menuModel) menuCargar(); });
+    onNavLoaded.push(function () { if (!menuDirty) { menuModel = parseNavModel(navYaml); menuDibujar(); } });
 
     /* --- materiales: módulos (carpetas) con sus archivos --- */
     function tipoDe(path) {

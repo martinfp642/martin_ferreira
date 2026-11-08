@@ -353,3 +353,15 @@ body.app {
 }
 
 .bc-bloque.destacado { animation: bc-destacado 1.4s ease-out; }
+
+/* Menú */
+.menu-arbol { display: flex; flex-direction: column; gap: 2px; border: 2px solid #000; padding: 2px; margin: 0.6rem 0 1rem; }
+.menu-fila { display: grid; grid-template-columns: 1.6rem minmax(10rem, 1.2fr) minmax(8rem, 1fr) auto; gap: 0.6rem; align-items: center; padding: 0.35rem 0.6rem; outline: 1px solid #d9d9d9; outline-offset: -0.5px; }
+.menu-fila.grupo { background: #f5f5f5; }
+.menu-fila.grupo input { font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; }
+.menu-fila.hijo { padding-left: 2.4rem; }
+.menu-fila .bc-ico { width: 1.4rem; height: 1.4rem; font-size: 0.7rem; }
+.menu-ruta { font-size: 0.6rem; color: #000; opacity: 0.7; word-break: break-all; }
+.menu-btns { display: flex; gap: 0.25rem; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+.be .menu-mover { width: auto; font-size: 0.6rem; padding: 0.35em 0.5em; }
+@media (max-width: 59.9375em) { .menu-fila { grid-template-columns: 1.6rem 1fr; } .menu-ruta, .menu-btns { grid-column: 2; } }
