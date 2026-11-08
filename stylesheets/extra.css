@@ -2319,3 +2319,21 @@ body.be-fullscreen-body {
   text-align: left;
   max-width: none;
 }
+
+/* Si el script aún no corrió (o quedó uno viejo en caché), el visor igual se ve como un recuadro */
+.md-typeset .stl:empty {
+  min-height: 12rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--panel);
+}
+
+.md-typeset .stl:empty::before {
+  content: "Pieza 3D · " attr(data-nombre) " · recargá la página si no aparece (Ctrl+Shift+R)";
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  text-align: center;
+  padding: 1rem;
+}

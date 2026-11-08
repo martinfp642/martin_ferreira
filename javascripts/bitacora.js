@@ -193,9 +193,9 @@
     function start() {
       if (started) return; started = true;
       estado.textContent = "Cargando pieza…";
-      Promise.all([loadThree(), fetch(src).then(function (r) { if (!r.ok) throw new Error("No encontré " + nombre); return r.arrayBuffer(); })])
-        .then(function (r) { build(r[0], r[1]); })
-        .catch(function (e) { estado.textContent = e.message; estado.classList.add("error"); });
+      Promise.all([loadThree(), fetch(src).then(function (r) { if (!r.ok) throw new Error("No encontré " + nombre + " (" + r.status + ")"); return r.arrayBuffer(); })])
+        .then(function (r) { try { build(r[0], r[1]); } catch (e) { estado.textContent = "No pude mostrar la pieza: " + e.message; estado.classList.add("error"); } })
+        .catch(function (e) { estado.textContent = e.message; estado.classList.add("error"); started = false; });
     }
 
     function build(THREE, buffer) {
@@ -229,7 +229,14 @@
 
       var w = lienzo.clientWidth || 600, hgt = lienzo.clientHeight || 450;
       var camera = new THREE.PerspectiveCamera(40, w / hgt, maxDim / 100, maxDim * 50);
-      var renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+      var renderer;
+      try {
+        renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+      } catch (e) {
+        estado.textContent = "Este navegador no permite gráficos 3D (WebGL). Podés descargar el STL con el botón de abajo.";
+        estado.classList.add("error");
+        return;
+      }
       renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
       renderer.setSize(w, hgt);
       lienzo.innerHTML = "";
