@@ -356,40 +356,47 @@
       .then(function (t) { return t.tree.filter(function (e) { return e.type === "blob"; }).map(function (e) { return e.path; }); });
   };
 
-  /* files: [{path, text} | {path, bytes} | {path, remove:true}] → un commit */
+  /* files: [{path, text} | {path, bytes} | {path, remove:true}] → un commit.
+     Si la rama avanzó mientras tanto (422 "not a fast forward"), reintenta
+     sobre el estado nuevo reutilizando los blobs ya subidos. */
   GitHub.prototype.commit = function (files, message, onStep) {
-    var self = this, base = self.repoPath(), parentSha, baseTree;
+    var self = this, base = self.repoPath(), entries = [];
     onStep = onStep || function () {};
-    return self.api(base + "/git/ref/heads/" + self.cfg.branch).then(function (ref) {
-      parentSha = ref.object.sha;
-      return self.api(base + "/git/commits/" + parentSha);
-    }).then(function (c) {
-      baseTree = c.tree.sha;
-      var entries = [];
-      return files.reduce(function (p, f) {
-        return p.then(function () {
-          if (f.remove) {
-            entries.push({ path: f.path, mode: "100644", type: "blob", sha: null });
-            return;
-          }
-          onStep("Subiendo " + f.path);
-          var body = f.bytes
-            ? { content: bytesToB64(f.bytes), encoding: "base64" }
-            : { content: f.text, encoding: "utf-8" };
-          return self.api(base + "/git/blobs", { method: "POST", body: body }).then(function (b) {
-            entries.push({ path: f.path, mode: "100644", type: "blob", sha: b.sha });
-          });
+    var subirBlobs = files.reduce(function (p, f) {
+      return p.then(function () {
+        if (f.remove) { entries.push({ path: f.path, mode: "100644", type: "blob", sha: null }); return; }
+        onStep("Subiendo " + f.path);
+        var body = f.bytes
+          ? { content: bytesToB64(f.bytes), encoding: "base64" }
+          : { content: f.text, encoding: "utf-8" };
+        return self.api(base + "/git/blobs", { method: "POST", body: body }).then(function (b) {
+          entries.push({ path: f.path, mode: "100644", type: "blob", sha: b.sha });
         });
-      }, Promise.resolve()).then(function () { return entries; });
-    }).then(function (entries) {
-      onStep("Armando el commit");
-      return self.api(base + "/git/trees", { method: "POST", body: { base_tree: baseTree, tree: entries } });
-    }).then(function (t) {
-      return self.api(base + "/git/commits", { method: "POST", body: { message: message, tree: t.sha, parents: [parentSha] } });
-    }).then(function (c) {
-      return self.api(base + "/git/refs/heads/" + self.cfg.branch, { method: "PATCH", body: { sha: c.sha, force: false } })
-        .then(function () { return c; });
-    });
+      });
+    }, Promise.resolve());
+
+    function intentar(n) {
+      var parentSha;
+      onStep(n > 1 ? "La rama cambió; reintento (" + n + ")…" : "Armando el commit");
+      return self.api(base + "/git/ref/heads/" + self.cfg.branch).then(function (ref) {
+        parentSha = ref.object.sha;
+        return self.api(base + "/git/commits/" + parentSha);
+      }).then(function (c) {
+        return self.api(base + "/git/trees", { method: "POST", body: { base_tree: c.tree.sha, tree: entries } });
+      }).then(function (t) {
+        return self.api(base + "/git/commits", { method: "POST", body: { message: message, tree: t.sha, parents: [parentSha] } });
+      }).then(function (c) {
+        return self.api(base + "/git/refs/heads/" + self.cfg.branch, { method: "PATCH", body: { sha: c.sha, force: false } })
+          .then(function () { return c; });
+      }).catch(function (e) {
+        if (n < 4 && e.status === 422 && /fast forward/i.test(e.message)) {
+          return new Promise(function (r) { setTimeout(r, 800 * n); }).then(function () { return intentar(n + 1); });
+        }
+        throw e;
+      });
+    }
+
+    return subirBlobs.then(function () { return intentar(1); });
   };
 
   function encodePath(p) {
