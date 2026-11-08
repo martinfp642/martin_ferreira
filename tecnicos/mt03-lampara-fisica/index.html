@@ -516,10 +516,10 @@
 <div class="datos">
 <ul>
 <li><strong>Máquina / técnica</strong>: cortadora láser CO₂; corte vectorial, grabado vectorial y rasterizado.</li>
-<li><strong>Materiales</strong>: placa para corte láser (material y espesor pendientes de consignar).</li>
+<li><strong>Materiales</strong>: MDF de 3 mm de espesor, definido como parámetro en Fusion 360.</li>
 <li><strong>Software</strong>: Fusion 360, Inkscape y RDWorks V8.</li>
-<li><strong>Tiempo</strong>: pendiente de registrar.</li>
-<li><strong>Costo aproximado</strong>: pendiente de calcular.</li>
+<li><strong>Tiempo</strong>: Se usaron muchas horas de trabajo en diseño.</li>
+<li><strong>Piezas usadas</strong>: 2 planchas de 45cm x 60cm</li>
 <li><strong>Archivos</strong>: <a href="#archivos">ver abajo</a>.</li>
 </ul>
 </div>
@@ -541,9 +541,17 @@
 </div>
 <h2 id="proceso">Proceso<a class="headerlink" href="#proceso" title="Permanent link">&para;</a></h2>
 <h3 id="1-modelado-en-fusion-360">1. Modelado en Fusion 360<a class="headerlink" href="#1-modelado-en-fusion-360" title="Permanent link">&para;</a></h3>
-<p>Comencé por el diseño tridimensional de la estructura en <strong>Fusion 360</strong>. Trabajé las caras de la lámpara por separado y diseñé los encastres para que pudieran unirse formando el volumen cúbico. Esta etapa fue importante porque un objeto que parece sencillo al verlo armado requiere que todas sus piezas coincidan: las dimensiones, las uniones y la posición de los orificios tienen que resolverse antes de fabricar.</p>
-<p>Pensar el modelo como un conjunto desmontable también respondió a una intención educativa. No buscaba producir una caja definitiva, sino una base que se pudiera intervenir, modificar y reutilizar. El modelo original quedó guardado en formato editable para poder realizar ajustes en futuras versiones.</p>
-<p><a href="../../files/mt03-corte-laser/lampara-fisica.f3d">Ver el modelo editable de Lámpara Física en Fusion 360</a></p>
+<p>Comencé por el diseño tridimensional de la estructura en <strong>Fusion 360</strong>. Mi intención fue crear una cámara oscura a partir del concepto de una lámpara modular: una caja cúbica con lados encastrables que pudieran montarse y desmontarse sin perder la relación entre las piezas. La tapa superior con un orificio forma parte de esa propuesta y, al retirarla, permite revelar lo que queda por debajo, junto a la definición de luz grabada. Me interesaba que la forma y el modo de interactuar con el objeto también expresaran una idea sobre la luz desde la física.</p>
+<p>Para fabricar la estructura elegí <strong>MDF de 3 mm de espesor</strong>. En Fusion 360 trabajé el diseño de forma <strong>paramétrica</strong>, tomando ese espesor como referencia para definir las dimensiones y los encastres. Esto fue especialmente importante para que las caras coincidieran entre sí y para poder modificar el diseño con mayor facilidad si en una nueva versión cambio el material o necesito ajustar las uniones.</p>
+<div class="carrete">
+<p><img alt="Diseño tridimensional de la cámara oscura y las caras encastrables en Fusion 360" src="../../images/mt03-corte-laser/diseno-camara.png" />
+<img alt="Parámetros del modelo definidos en Fusion 360, incluido el espesor del material de 3 mm" src="../../images/mt03-corte-laser/parametros.png" /></p>
+</div>
+<p>Diseñar las piezas por separado me obligó a revisar las medidas del cubo, la posición de las aberturas y la correspondencia de cada encastre. No buscaba producir una caja cerrada y definitiva, sino una estructura que pudiera intervenirse y reutilizarse en otras experiencias educativas. Por eso conservé el archivo editable y también exporté el modelo tridimensional para poder observar el conjunto armado.</p>
+<p><strong>Modelo 3D interactivo de la Lámpara Física:</strong></p>
+<div class="stl" data-src="../files/mt03-corte-laser/lampara-fisica.stl" data-nombre="lampara-fisica.stl" data-pie="Modelo de la cámara oscura diseñado en Fusion 360; se puede girar y explorar"></div>
+
+<p><a href="../../files/mt03-corte-laser/lampara-fisica.f3d">Descargar modelo editable de Fusion 360 (.f3d)</a> · <a href="../../files/mt03-corte-laser/lampara-fisica.stl">Descargar modelo tridimensional (.stl)</a></p>
 <h3 id="2-preparacion-vectorial-en-inkscape">2. Preparación vectorial en Inkscape<a class="headerlink" href="#2-preparacion-vectorial-en-inkscape" title="Permanent link">&para;</a></h3>
 <p>Una vez resuelta la geometría, trabajé en <strong>Inkscape</strong> con las piezas y los elementos gráficos. Preparé los contornos de corte y los elementos que debían grabarse o rasterizarse, cuidando la correspondencia entre las caras y la posición de los encastres.</p>
 <p>En esta etapa incorporé el logo de Física Simple y la definición de luz. El texto no fue pensado solamente como una identificación del objeto: es parte de la propuesta de la lámpara y de la relación entre la experiencia óptica y el significado físico de la luz.</p>
@@ -617,17 +625,10 @@
 <p><span class="fail">Aspectos para seguir evaluando</span> No alcanza con que la caja pueda cortarse: todavía es importante <strong>verificar sistemáticamente</strong> la calidad de los encastres, las tolerancias reales del material, la legibilidad del texto grabado y, especialmente, el funcionamiento óptico de la cámara oscura. No considero demostrados esos resultados experimentales únicamente por haber completado el diseño y el corte.</p>
 <h2 id="reflexion">Reflexión<a class="headerlink" href="#reflexion" title="Permanent link">&para;</a></h2>
 <p>Lo que más me interesó de este módulo fue pasar de la idea de una lámpara a un objeto que puede generar preguntas sobre la luz. El diseño de las caras encastrables me obligó a pensar no solo en la forma, sino también en el armado, la fabricación y las posibilidades de intervenir la estructura después.</p>
-<p>La combinación de Fusion 360, Inkscape y RDWorks me permitió ver con mayor claridad que <strong>diseñar para fabricar</strong> implica tomar decisiones en diferentes etapas: modelar correctamente, preparar los vectores, asignar operaciones y comprobar los resultados sobre el material. Cada archivo cumple una función y los detalles que se dejan sin resolver en una etapa terminan apareciendo en la siguiente.</p>
+<p>La combinación de Fusion 360, Inkscape y RDWorks me permitió ver con mayor claridad que <strong>diseñar para fabricar</strong> implica tomar decisiones en diferentes etapas, desde parametrizar el espesor del MDF hasta configurar la máquina: modelar correctamente, preparar los vectores, asignar operaciones y comprobar los resultados sobre el material. Cada archivo cumple una función y los detalles que se dejan sin resolver en una etapa terminan apareciendo en la siguiente.</p>
 <p>También valoro la dimensión conceptual del proyecto. La cámara oscura permite abordar la propagación de la luz a través de una experiencia tangible. Al mismo tiempo, el orificio, la tapa desmontable y la definición grabada proponen un juego entre <strong>dejar entrar la luz, observar y revelar</strong>. Me gustó que esa idea pudiera expresarse tanto en la función del objeto como en su diseño.</p>
 <p>Quiero seguir mejorando esta pieza y llevarla hacia una versión más rigurosa desde el punto de vista experimental: revisar el diámetro del orificio, la superficie de proyección y las condiciones de observación; medir y ajustar los encastres; y registrar los cambios necesarios para que otras personas puedan reproducirla.</p>
 <p>Este trabajo también se vincula con <strong>FisicaBit</strong> y con mi objetivo de crear materiales de laboratorio accesibles y reproducibles. La fabricación digital tiene un valor especial cuando permite diseñar un recurso, probarlo, corregirlo y compartir sus archivos para que pueda producirse en otras instituciones educativas. Esa es la dirección en la que me interesa seguir avanzando durante la especialización.</p>
-<h2 id="pieza-3d">Pieza 3D<a class="headerlink" href="#pieza-3d" title="Permanent link">&para;</a></h2>
-<div class="stl" data-src="../files/mt03-corte-laser/lampara-fisica.stl" data-nombre="lampara-fisica.stl" data-pie="Modelo tridimensional de la Lámpara Física para girar y explorar"></div>
-
-<ul>
-<li><a href="../../files/mt03-corte-laser/lampara-fisica.stl">Lámpara Física (.stl)</a> · modelo para imprimir o abrir en otro programa.</li>
-<li><a href="../../files/mt03-corte-laser/lampara-fisica.f3d">Lámpara Física (.f3d)</a> · modelo original editable en Fusion 360.</li>
-</ul>
 <h2 id="archivos">Archivos<a class="headerlink" href="#archivos" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../../files/mt03-corte-laser/lampara-fisica.f3d">Lámpara Física (.f3d)</a> · modelo original editable en Fusion 360.</li>
@@ -647,7 +648,7 @@
 <div class="md-source-date">
   <small>
     
-      Last update: <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="November 8, 2026 14:39:38 UTC">November 8, 2026</span>
+      Last update: <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="November 8, 2026 15:00:21 UTC">November 8, 2026</span>
     
   </small>
 </div>
