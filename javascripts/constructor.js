@@ -63,10 +63,11 @@
     nota:       { nombre: "Nota",            data: function () { return { titulo: "Nota", text: "", tipo: "note" }; } },
     video:      { nombre: "Video",           data: function () { return { url: "" }; } },
     codigo:     { nombre: "Código",          data: function () { return { lang: "", text: "" }; } },
-    archivos:   { nombre: "Archivos",        data: function () { return { files: [] }; } }
+    archivos:   { nombre: "Archivos",        data: function () { return { files: [] }; } },
+    pieza3d:    { nombre: "Pieza 3D",        data: function () { return { files: [], caption: "", descarga: true }; } }
   };
 
-  var ICONOS = { titulo: "H", texto: "¶", imagen: "▣", carrete: "⧉", galeria: "▦", comparar: "◧", hero: "▬", datos: "☰", parametros: "⊞", linea: "⋮", resultado: "✓", nota: "!", video: "▶", codigo: "</>", archivos: "⇩" };
+  var ICONOS = { titulo: "H", texto: "¶", imagen: "▣", carrete: "⧉", galeria: "▦", comparar: "◧", hero: "▬", datos: "☰", parametros: "⊞", linea: "⋮", resultado: "✓", nota: "!", video: "▶", codigo: "</>", archivos: "⇩", pieza3d: "⬡" };
 
   /* Esquemas dibujados de cada plantilla (líneas negras, como el sitio) */
   function wire(parts) {
@@ -104,6 +105,7 @@
     tec: [["titulo", { text: "Objetivo" }], ["texto", {}], ["datos", {}], ["titulo", { text: "Referencias" }], ["texto", {}],
           ["titulo", { text: "Proceso" }], ["carrete", {}], ["parametros", {}], ["titulo", { text: "Resultados" }],
           ["resultado", { ok: true }], ["resultado", { ok: false }], ["comparar", {}], ["hero", {}],
+          ["titulo", { text: "Pieza 3D" }], ["pieza3d", {}],
           ["titulo", { text: "Reflexión" }], ["texto", {}], ["titulo", { text: "Archivos" }], ["archivos", {}],
           ["titulo", { text: "Atribución y uso de IA" }], ["texto", {}]],
     dis: [["titulo", { text: "Brief" }], ["texto", {}], ["datos", { rows: [{ k: "Usuario", v: "" }, { k: "Restricciones", v: "" }, { k: "Entregable", v: "" }, { k: "Herramientas", v: "" }] }],
@@ -487,6 +489,45 @@
       return box;
     }
 
+    function stlUI(b) {
+      var box = el("div", "bc-files");
+      var drop = el("div", "be-drop", "Arrastrá el archivo .stl acá, o hacé clic · hasta 50 MB");
+      var fi = el("input"); fi.type = "file"; fi.accept = ".stl,model/stl,application/sla"; fi.style.display = "none";
+      drop.addEventListener("click", function () { fi.click(); });
+      drop.addEventListener("dragover", function (e) { e.preventDefault(); drop.classList.add("over"); });
+      drop.addEventListener("dragleave", function () { drop.classList.remove("over"); });
+      drop.addEventListener("drop", function (e) { e.preventDefault(); drop.classList.remove("over"); addFile(e.dataTransfer.files[0]); });
+      fi.addEventListener("change", function () { addFile(fi.files[0]); fi.value = ""; });
+      function addFile(file) {
+        if (!file) return;
+        if (!/\.stl$/i.test(file.name)) { alert("Elegí un archivo .stl"); return; }
+        if (file.size > MAX_FILE) { alert(file.name + " pesa " + B.fmtSize(file.size) + ". Más de 50 MB no entra en el repositorio."); return; }
+        if (file.size > AVISO_FILE && !confirm(file.name + " pesa " + B.fmtSize(file.size) + ". La guía pide consultar antes de subir más de 10 MB. ¿Subirlo igual?")) return;
+        file.arrayBuffer().then(function (buf) {
+          var name = B.slugify(file.name.replace(/\.[^.]+$/, "")) + ".stl";
+          var f = { id: uid(), name: name, desc: "", bytes: new Uint8Array(buf), url: URL.createObjectURL(new Blob([buf], { type: "model/stl" })) };
+          b.data.files = [f];
+          idbPut(f.id, f.bytes, "model/stl");
+          draw(); changed();
+        });
+      }
+      var list = el("div", "bc-rows");
+      function draw() {
+        list.innerHTML = "";
+        b.data.files.forEach(function (f, i) {
+          var row = el("div", "bc-row");
+          row.appendChild(el("span", "bc-filename", B.escapeHtml(f.name) + ' <span class="tag">' + (f.bytes ? B.fmtSize(f.bytes.length) : "en el repositorio") + "</span>"));
+          var rm = el("button", "small", "×"); rm.type = "button"; rm.addEventListener("click", function () { b.data.files.splice(i, 1); draw(); changed(); });
+          row.appendChild(el("span")); row.appendChild(rm);
+          list.appendChild(row);
+        });
+        drop.style.display = b.data.files.length ? "none" : "block";
+      }
+      draw();
+      box.appendChild(list); box.appendChild(drop); box.appendChild(fi);
+      return box;
+    }
+
     function form(b) {
       var d = b.data, w = el("div", "bc-form");
       switch (b.type) {
@@ -543,6 +584,11 @@
         case "archivos":
           w.appendChild(filesUI(b));
           break;
+        case "pieza3d":
+          w.appendChild(stlUI(b));
+          w.appendChild(field("Pie", input(d.caption, "Qué es la pieza, medidas, material previsto", function (v) { d.caption = v; })));
+          w.appendChild((function () { var l = el("label", "be-check"); var c = el("input"); c.type = "checkbox"; c.checked = d.descarga !== false; c.addEventListener("change", function () { d.descarga = c.checked; changed(); }); l.appendChild(c); l.appendChild(document.createTextNode(" Agregar enlace de descarga debajo del visor")); return l; })());
+          break;
       }
       return w;
     }
@@ -562,6 +608,7 @@
         case "video": return d.url || "(sin dirección)";
         case "codigo": return (d.lang || "código") + (d.text ? " · " + d.text.split("\n").length + " líneas" : " · (vacío)");
         case "archivos": n = d.files.length; return n ? n + (n === 1 ? " archivo" : " archivos") : "(sin archivos)";
+        case "pieza3d": return d.files[0] ? d.files[0].name + (d.caption ? " · " + d.caption : "") : "(sin archivo .stl)";
       }
       return "";
     }
@@ -700,6 +747,13 @@
           }
           case "codigo": if (d.text.trim()) out.push("```" + (d.lang || ""), d.text.replace(/\s+$/, ""), "```", ""); break;
           case "archivos": if (d.files.length) out.push(d.files.map(function (f) { return "- [" + f.name + "](" + (f.url ? f.url : rel(fileRepoPath(f))) + ")" + (f.desc ? " · " + f.desc : ""); }).join("\n"), ""); break;
+          case "pieza3d":
+            if (d.files[0]) {
+              var sf = d.files[0], srel = rel(fileRepoPath(sf));
+              out.push('<div class="stl" data-src="' + srel + '" data-nombre="' + B.escapeHtml(sf.name) + '"' + (d.caption ? ' data-pie="' + B.escapeHtml(d.caption) + '"' : "") + "></div>", "");
+              if (d.descarga !== false) out.push("- [" + sf.name + "](" + srel + ") · archivo STL para imprimir", "");
+            }
+            break;
         }
         partes.push({ type: b.type, nivel: b.type === "titulo" ? (d.nivel === "h3" ? 3 : 2) : 0, out: out });
       });
@@ -726,7 +780,7 @@
           var d = {};
           Object.keys(b.data).forEach(function (k) {
             if (k === "imgs") d.imgs = b.data.imgs.map(function (im) { return { name: im.name, caption: im.caption || "", repoPath: imgRepoPath(im) }; });
-            else if (k === "files") d.files = b.data.files.map(function (f) { return f.url ? { name: f.name, desc: f.desc || "", url: f.url } : { name: f.name, desc: f.desc || "", repoPath: fileRepoPath(f) }; });
+            else if (k === "files") d.files = b.data.files.map(function (f) { return (f.url && !/^blob:/.test(f.url) && !f.bytes && b.type !== "pieza3d") ? { name: f.name, desc: f.desc || "", url: f.url } : { name: f.name, desc: f.desc || "", repoPath: fileRepoPath(f) }; });
             else d[k] = b.data[k];
           });
           return { type: b.type, data: d, open: b.open !== false };
@@ -737,7 +791,10 @@
     /* --- vista previa --- */
     function previewImages() {
       var list = [];
-      blocks.forEach(function (b) { (b.data.imgs || []).forEach(function (im) { if (im.url) list.push({ rel: rel(imgRepoPath(im)), url: im.url }); }); });
+      blocks.forEach(function (b) {
+        (b.data.imgs || []).forEach(function (im) { if (im.url) list.push({ rel: rel(imgRepoPath(im)), url: im.url }); });
+        if (b.type === "pieza3d") (b.data.files || []).forEach(function (f) { if (f.url && f.bytes) list.push({ rel: rel(fileRepoPath(f)), url: f.url }); });
+      });
       return list;
     }
     function renderPreview() {
@@ -764,7 +821,7 @@
         d.origen = ORIGEN;
         d.bloques.forEach(function (b, i) {
           if (b.data.imgs) b.data.imgs.forEach(function (im, k) { var src = blocks[i].data.imgs[k]; im.id = src.id; im.hasBytes = !!src.bytes; im.url = src.bytes ? null : src.url; im.type = src.type; });
-          if (b.data.files) b.data.files.forEach(function (f, k) { var src = blocks[i].data.files[k]; f.id = src.id; f.hasBytes = !!src.bytes; });
+          if (b.data.files) b.data.files.forEach(function (f, k) { var src = blocks[i].data.files[k]; f.id = src.id; f.hasBytes = !!src.bytes; if (src.url && !/^blob:/.test(src.url)) f.url = src.url; });
         });
         localStorage.setItem(KEY_DRAFT, JSON.stringify(d));
       } catch (e) { /* nada */ }
@@ -798,7 +855,7 @@
           } else if (k === "files") {
             b.data.files = bb.data.files.map(function (f) {
               var o = { id: f.id || uid(), name: f.name, desc: f.desc || "", bytes: null, repoPath: f.repoPath, url: f.url || null };
-              if (fromDraft && f.hasBytes) pending.push(idbGet(o.id).then(function (r) { if (r) o.bytes = r.bytes; }));
+              if (fromDraft && f.hasBytes) pending.push(idbGet(o.id).then(function (r) { if (r) { o.bytes = r.bytes; if (/\.stl$/i.test(o.name)) o.url = URL.createObjectURL(new Blob([r.bytes], { type: "model/stl" })); } }));
               return o;
             });
           } else b.data[k] = bb.data[k];
@@ -857,7 +914,7 @@
         ORIGEN = path;
         blocks.forEach(function (b) {
           (b.data.imgs || []).forEach(function (im) { im.bytes = null; });
-          (b.data.files || []).forEach(function (f) { f.bytes = null; });
+          (b.data.files || []).forEach(function (f) { if (f.bytes) { f.bytes = null; if (b.type === "pieza3d") f.url = B.cfg.site + fileRepoPath(f).replace(/^docs\//, ""); } });
         });
         idbClear(); saveDraft(); render();
         log("Publicado en el commit " + c.sha.slice(0, 7) + ". GitHub Actions reconstruye el sitio en uno o dos minutos.\n→ " + B.pageUrl(B.cfg.site, path) + "\n→ https://github.com/" + B.cfg.owner + "/" + B.cfg.repo + "/actions");

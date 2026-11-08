@@ -198,6 +198,7 @@
       case "ok": return '<span class="ok">éxito</span> …';
       case "fail": return '<span class="fail">falló</span> …';
       case "nota": return '!!! note "Título"\n    Texto de la nota.';
+      case "stl": return '<div class="stl" data-src="../files/carpeta/pieza.stl" data-nombre="pieza.stl" data-pie="Qué es la pieza"></div>';
     }
     return null;
   }

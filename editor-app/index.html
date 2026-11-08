@@ -68,6 +68,7 @@
   <button type="button" data-add="video"><span class="bc-ico">▶</span>Video</button>
   <button type="button" data-add="codigo"><span class="bc-ico">&lt;/&gt;</span>Código</button>
   <button type="button" data-add="archivos"><span class="bc-ico">⇩</span>Archivos</button>
+  <button type="button" data-add="pieza3d"><span class="bc-ico">⬡</span>Pieza 3D</button>
 </div>
 
 <div class="bc-plantillas" id="bc-plantillas"></div>
@@ -301,6 +302,7 @@
     <button type="button" data-block="ok" title="Etiqueta de éxito">Éxito</button>
     <button type="button" data-block="fail" title="Etiqueta de fallo">Falló</button>
     <button type="button" data-block="nota" title="Recuadro de nota">Nota</button>
+    <button type="button" data-block="stl" title="Visor de una pieza STL">Pieza 3D</button>
   </div>
   <div class="be-tb-group be-tb-right" data-help="Vista">
     <button type="button" data-view="editar">Texto</button>
@@ -388,7 +390,7 @@
 
 <h3>Armar página</h3>
 <ul>
-  <li>Elegís elementos de la paleta (título, texto, imagen, carrete, galería, antes/después, ficha, tabla, línea de tiempo, resultado, nota, video, código, archivos) y completás sus campos. Cada elemento se mueve con las flechas o se quita con ×.</li>
+  <li>Elegís elementos de la paleta (título, texto, imagen, carrete, galería, antes/después, ficha, tabla, línea de tiempo, resultado, nota, video, código, archivos, pieza 3D) y completás sus campos. <strong>Pieza 3D</strong> sube un archivo .stl y lo muestra en un visor para girarlo, acercarlo, verlo en alambre y descargarlo. Cada elemento se mueve con las flechas o se quita con ×.</li>
   <li>Las fotos se arrastran dentro de cada elemento; el pie de foto se escribe debajo de cada una.</li>
   <li>El elemento <strong>Archivos</strong> tiene dos caminos: subir el archivo al repositorio (queda en <code>docs/files/</code>; hasta 10 MB sin aviso, hasta 50 MB con confirmación) o <strong>agregar un enlace</strong> a Google Drive, YouTube u otro sitio. Para Drive: subir el archivo, <em>Compartir → Cualquier persona con el enlace</em>, copiar el enlace y pegarlo.</li>
   <li>La vista previa de la derecha muestra la página tal como va a quedar. <strong>Publicar</strong> sube la página, las fotos y los archivos en un solo commit y la agrega al menú.</li>
