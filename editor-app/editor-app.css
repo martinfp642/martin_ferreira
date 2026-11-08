@@ -323,3 +323,7 @@ body.app {
   letter-spacing: 0.08em;
   background: #f5f5f5;
 }
+
+.bc-abrir-ctl { display: flex; gap: 0.4rem; }
+.bc-abrir-ctl select { flex: 1; }
+.be .be-tb-select { width: auto; font-size: 0.58rem; padding: 0.4em 0.5em; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; }

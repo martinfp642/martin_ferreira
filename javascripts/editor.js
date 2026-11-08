@@ -1156,7 +1156,7 @@
       editFile = { path: p, sha: sha || null, nuevo: !!nuevo };
       showUbic(!!nuevo);
       $("be-contenido").value = text;
-      $("be-al-constructor").style.display = /<!-- bloques:/.test(text) ? "inline-block" : "none";
+      $("be-al-constructor").style.display = /\.md$/i.test(p) ? "inline-block" : "none";
       $("be-mensaje").value = (nuevo ? "Nueva página: " : "Edito ") + p.replace(/^docs\//, "");
       if (/^docs\/.*\.md$/.test(p)) {
         $("be-ver").href = pageUrl(cfg.site, p); $("be-ver").style.display = nuevo ? "none" : "inline-block";
@@ -1746,20 +1746,27 @@
       editFile.titulo = titulo;
       log("be-log2", "Página lista para retocar. Guardá cuando termines.");
     }
-    $("be-contenido").addEventListener("input", function () {
-      $("be-al-constructor").style.display = /<!-- bloques:/.test(this.value) ? "inline-block" : "none";
-    });
-    $("be-archivo").addEventListener("change", function () {
-      setTimeout(function () { $("be-al-constructor").style.display = /<!-- bloques:/.test($("be-contenido").value) ? "inline-block" : "none"; }, 1500);
-    });
     $("be-al-constructor").addEventListener("click", function () {
-      var m = $("be-contenido").value.match(/<!-- bloques:([A-Za-z0-9+/=]+) -->/);
-      if (!m || !window.BitacoraConstructor) return;
+      if (!window.BitacoraConstructor || !editFile) return;
+      var texto = $("be-contenido").value;
+      var m = texto.match(/<!-- bloques:([A-Za-z0-9+/=]+) -->/);
       try {
-        var json = JSON.parse(b64ToUtf8(m[1]));
-        window.BitacoraConstructor.load(json, editFile ? editFile.path : null);
+        if (m) window.BitacoraConstructor.load(JSON.parse(b64ToUtf8(m[1])), editFile.path);
+        else window.BitacoraConstructor.importar(texto, editFile.path);
         root.querySelector('.be-toolbar [data-panel="armar"]').click();
-      } catch (e) { log("be-log2", "No pude leer los bloques: " + e.message, true); }
+      } catch (e) { log("be-log2", "No pude convertir la página en elementos: " + e.message, true); }
+    });
+
+    /* insertar una plantilla dentro de la página abierta */
+    $("be-tpl").addEventListener("change", function () {
+      var k = this.value; this.value = "";
+      if (!k) return;
+      if (!editFile) { log("be-log2", "Abrí o creá una página primero.", true); return; }
+      gh.getText("docs/plantillas/" + k + ".md").then(function (f) {
+        var cuerpo = f.text.replace(/^---[\s\S]*?---\n/, "").replace(/^#\s.+\n/m, "").replace(/^<p class="meta">.*<\/p>\n/m, "").replace(/^\n+/, "");
+        insertAtCursor($("be-contenido"), "\n" + cuerpo + "\n");
+        log("be-log2", "Plantilla insertada en el cursor. Reemplazá los textos en cursiva y las fotos de ejemplo.");
+      }).catch(function (e) { log("be-log2", "No pude traer la plantilla: " + e.message, true); });
     });
 
     window.Bitacora = {
@@ -1774,6 +1781,7 @@
       openNewText: openNewText, reloadTree: loadTree,
       navInsertAt: navInsertAt, navItems: navItems, makeUbicacion: makeUbicacion,
       elegirMaterial: elegirMaterial,
+      paginas: function () { return treePaths.filter(function (p) { return /^docs\/.*\.md$/.test(p); }); },
       onNavLoaded: function (fn) { onNavLoaded.push(fn); }
     };
     onNavLoaded.push(function () { ubicEditar.fillSections(); ubicEditar.refresh(); });

@@ -36,7 +36,14 @@
 <section class="be-panel active" data-panel="armar">
 <div id="be-constructor">
 
-<div class="bc-paso"><span class="bc-num">1</span>La página <small>Título, sección del menú y fecha.</small></div>
+<div class="bc-paso"><span class="bc-num">1</span>La página <small>Nueva, o abrí una existente para editarla por elementos.</small></div>
+
+<div class="be-row bc-abrir-fila">
+  <div class="be-field">
+    <label for="bc-abrir">Abrir una página existente <small>Se convierte en elementos; al publicar, la reemplaza.</small></label>
+    <div class="bc-abrir-ctl"><select id="bc-abrir"><option value="">Abrir una página existente…</option></select><button type="button" class="small" id="bc-abrir-btn">Abrir</button></div>
+  </div>
+</div>
 
 <div class="be-row">
   <div class="be-field">
@@ -306,6 +313,14 @@
   </div>
   <div class="be-tb-group" data-help="Material">
     <button type="button" id="be-mat-toggle" title="Archivos y fotos ya subidos, listos para insertar">Materiales ▾</button>
+    <select id="be-tpl" class="be-tb-select" title="Insertar la estructura de una plantilla en el cursor">
+      <option value="">Insertar plantilla…</option>
+      <option value="tecnologia">Tecnología y Fabricación</option>
+      <option value="diseno">Diseño</option>
+      <option value="innovacion">Innovación</option>
+      <option value="proyecto">Proyecto Integrador</option>
+      <option value="referencia">Referencias</option>
+    </select>
   </div>
   <div class="be-tb-group" data-help="Bloques">
     <button type="button" data-block="carrete" title="Carrusel de fotos">Carrete</button>
@@ -450,7 +465,8 @@
   <li>Las fotos se arrastran dentro de cada elemento; el pie de foto se escribe debajo de cada una.</li>
   <li>El elemento <strong>Archivos</strong> tiene dos caminos: subir el archivo al repositorio (queda en <code>docs/files/</code>; hasta 10 MB sin aviso, hasta 50 MB con confirmación) o <strong>agregar un enlace</strong> a Google Drive, YouTube u otro sitio. Para Drive: subir el archivo, <em>Compartir → Cualquier persona con el enlace</em>, copiar el enlace y pegarlo.</li>
   <li>La vista previa de la derecha muestra la página tal como va a quedar. <strong>Publicar</strong> sube la página, las fotos y los archivos en un solo commit y la agrega al menú.</li>
-  <li>Una página armada así se puede volver a abrir en el constructor desde <strong>Editar archivo</strong> (botón "Abrir en Armar página").</li>
+  <li>Cualquier página del sitio se puede abrir en el constructor: desde Armar página con "Abrir una página existente", o desde Markdown con "Abrir en Armar página". El Markdown se convierte en elementos (títulos, textos, carretes, galerías, fichas, tablas, resultados, notas, videos, código, piezas 3D, archivos) y al publicar se reemplaza la página.</li>
+  <li>En Markdown, "Insertar plantilla…" pega la estructura de una plantilla en el cursor, dentro de la página que tengas abierta.</li>
 </ul>
 
 <h3>Archivos</h3>

@@ -158,7 +158,11 @@
     function group() { return ubic.group(); }
     function slug() { return ubic.slug(); }
     function pagePath() { return ORIGEN || ubic.path(); }
-    function updateRuta() { ubic.refresh(); var r = $("bc-ruta"); if (r) r.textContent = pagePath(); }
+    function updateRuta() {
+      ubic.refresh();
+      var r = root.querySelector("#bc-ubic .ubic-ruta");
+      if (r && ORIGEN) r.textContent = ORIGEN + " (página existente: se reemplaza al publicar)";
+    }
 
     ["bc-titulo", "bc-semana"].forEach(function (id) { $(id).addEventListener("input", function () { updateRuta(); changed(); }); });
 
@@ -209,7 +213,7 @@
         card.innerHTML = '<span class="bc-plantilla-wire">' + wire(pl.wire) + '</span><span class="bc-plantilla-nombre">' + pl.nombre + '</span><span class="bc-plantilla-desc">' + pl.desc + "</span>";
         card.addEventListener("click", function () {
           if (blocks.length && !confirm("¿Reemplazar los elementos actuales por la plantilla \u201c" + pl.nombre + "\u201d?")) return;
-          blocks = [];
+          blocks = []; ORIGEN = null;
           ESTRUCTURAS[pl.k].forEach(function (e) { add(e[0], e[1], true); });
           if (secciones[pl.k] && B.groups().some(function (g) { return g.name === secciones[pl.k]; })) { ubic.set(secciones[pl.k]); updateRuta(); }
           grid.querySelectorAll(".bc-plantilla").forEach(function (c) { c.classList.toggle("activa", c === card); });
@@ -730,7 +734,8 @@
     function md() {
       var titulo = $("bc-titulo").value.trim() || "Sin título";
       var out = ["---", "title: " + B.yamlQuote(titulo), "---", "", "# " + titulo, ""];
-      var meta = [$("bc-semana").value.trim(), group().name || ""].filter(Boolean).join(" · ");
+      var semana = $("bc-semana").value.trim(), gname = group().name || "";
+      var meta = (gname && semana.indexOf(gname) >= 0) ? semana : [semana, gname].filter(Boolean).join(" · ");
       if (meta) out.push('<p class="meta">' + B.escapeHtml(meta) + "</p>", "");
       var partes = [];
       blocks.forEach(function (b) {
@@ -954,7 +959,159 @@
       }).catch(function (e) { log("No se publicó: " + e.message, true); }).then(function () { btn.disabled = false; btn.textContent = "Publicar en el sitio"; });
     });
 
+
+    /* ------------------------------------------------------------------ */
+    /* Importar cualquier Markdown del sitio como elementos                */
+    /* ------------------------------------------------------------------ */
+    function resolverRuta(rel, pagePath) {
+      // ../images/x/y.jpg relativo al .md → docs/images/x/y.jpg
+      if (/^(https?:|\/|blob:|data:)/.test(rel)) return null;
+      var partes = pagePath.split("/"); partes.pop();
+      rel.split("/").forEach(function (seg) {
+        if (seg === "..") partes.pop(); else if (seg && seg !== ".") partes.push(seg);
+      });
+      return partes.join("/");
+    }
+    function imagenDesde(alt, rel, pagePath) {
+      var repo = resolverRuta(rel, pagePath);
+      return { id: uid(), name: rel.replace(/^.*\//, ""), caption: alt || "", bytes: null, url: repo ? B.cfg.site + repo.replace(/^docs\//, "") : rel, repoPath: repo || rel, fijo: true };
+    }
+    var RE_IMG = /^!\[([^\]]*)\]\(([^)\s]+)\)\s*$/;
+    var RE_LINK = /^-\s+\[([^\]]+)\]\(([^)\s]+)\)\s*(?:·\s*(.*))?$/;
+
+    function importarMarkdown(mdText, pagePath) {
+      var text = mdText.replace(/\r\n/g, "\n");
+      var titulo = "", meta = "";
+      var fm = text.match(/^---\n([\s\S]*?)\n---\n/);
+      if (fm) { var t = fm[1].match(/^title:\s*(.+)$/m); if (t) titulo = t[1].trim().replace(/^["']|["']$/g, ""); text = text.slice(fm[0].length); }
+      var lines = text.split("\n"), i = 0, nuevos = [], buffer = [];
+
+      function flushTexto() {
+        var t = buffer.join("\n").replace(/^\n+|\n+$/g, "");
+        buffer = [];
+        if (t.trim()) nuevos.push({ type: "texto", data: { text: t } });
+      }
+      function push(type, data) { flushTexto(); nuevos.push({ type: type, data: data }); }
+      function hastaCierre(re) { // devuelve las líneas hasta la que cumple re (sin incluirla) y avanza
+        var out = [];
+        while (i < lines.length && !re.test(lines[i])) { out.push(lines[i]); i++; }
+        i++; return out;
+      }
+      function imagenes(bloque) { return bloque.map(function (l) { return l.trim().match(RE_IMG); }).filter(Boolean).map(function (m) { return imagenDesde(m[1], m[2], pagePath); }); }
+
+      while (i < lines.length) {
+        var l = lines[i], tl = l.trim(), m;
+        if (!titulo && (m = tl.match(/^#\s+(.+)$/))) { titulo = m[1].trim(); i++; continue; }
+        if ((m = tl.match(/^#\s+(.+)$/)) && nuevos.length === 0 && !buffer.join("").trim()) { i++; continue; }
+        if ((m = tl.match(/^<p class="meta">([\s\S]*?)<\/p>$/))) { meta = m[1].replace(/<[^>]+>/g, ""); i++; continue; }
+        if (/^<!-- bloques:/.test(tl)) { i++; continue; }
+        if ((m = tl.match(/^(#{2,3})\s+(.+)$/))) { push("titulo", { text: m[2].trim(), nivel: m[1].length === 3 ? "h3" : "h2" }); i++; continue; }
+        if (/^<div class="carrete"/.test(tl)) { i++; push("carrete", { imgs: imagenes(hastaCierre(/^<\/div>/)) }); continue; }
+        if ((m = tl.match(/^<div class="galeria\s*(dos|tres)?"/))) { i++; push("galeria", { imgs: imagenes(hastaCierre(/^<\/div>/)), cols: m[1] || "" }); continue; }
+        if (/^<div class="comparar"/.test(tl)) { i++; var ci = imagenes(hastaCierre(/^<\/div>/)); push("comparar", { imgs: ci, a: ci[0] ? ci[0].caption || "Antes" : "Antes", b: ci[1] ? ci[1].caption || "Después" : "Después" }); continue; }
+        if (/^<figure class="hero-shot"/.test(tl)) { i++; push("hero", { imgs: imagenes(hastaCierre(/^<\/figure>/)).slice(0, 1) }); continue; }
+        if (/^<figure( markdown)?>$/.test(tl)) { i++; var fi = imagenes(hastaCierre(/^<\/figure>/)); if (fi[0]) push("imagen", { imgs: fi.slice(0, 1), grande: false }); continue; }
+        if (/^<div class="datos"/.test(tl)) {
+          i++; var rows = hastaCierre(/^<\/div>/).map(function (x) { return x.trim().match(/^-\s+\*\*(.+?)\*\*\s*:?\s*(.*)$/); }).filter(Boolean).map(function (x) { return { k: x[1], v: x[2].replace(/\[ver abajo\]\(#archivos\)/i, "ver abajo") }; });
+          push("datos", { rows: rows }); continue;
+        }
+        if (/^<div class="linea"/.test(tl)) {
+          i++; var rl = hastaCierre(/^<\/div>/).map(function (x) { return x.trim().match(/^-\s+\*\*(.+?)\*\*\s*[·:-]?\s*(.*)$/); }).filter(Boolean).map(function (x) { return { k: x[1], v: x[2] }; });
+          push("linea", { rows: rl }); continue;
+        }
+        if ((m = tl.match(/^<div class="stl"([^>]*)><\/div>$/))) {
+          var a = function (n) { var r = m[1].match(new RegExp(n + '="([^"]*)"')); return r ? r[1] : ""; };
+          var src = a("data-src"), repo = resolverRuta(src, pagePath);
+          push("pieza3d", { files: [{ id: uid(), name: a("data-nombre") || src.replace(/^.*\//, ""), desc: "", bytes: null, url: repo ? B.cfg.site + repo.replace(/^docs\//, "") : src, repoPath: repo || src, fijo: true }], caption: a("data-pie"), descarga: false });
+          i++;
+          // enlace de descarga justo debajo
+          while (i < lines.length && !lines[i].trim()) i++;
+          if (i < lines.length && RE_LINK.test(lines[i].trim()) && /\.stl\)/.test(lines[i])) { nuevos[nuevos.length - 1].data.descarga = true; i++; }
+          continue;
+        }
+        if (/^<div class="video(-proceso)?"/.test(tl)) {
+          var vb = [l]; if (!/<\/div>/.test(l)) { i++; vb = vb.concat(hastaCierre(/<\/div>/)); } else i++;
+          var vm = vb.join("\n").match(/src="([^"]+)"/);
+          push("video", { url: vm ? vm[1] : "" }); continue;
+        }
+        if ((m = tl.match(/^<span class="(ok|fail)">[^<]*<\/span>\s*(.*)$/))) { push("resultado", { ok: m[1] === "ok", text: m[2].replace(/^_|_$/g, "") }); i++; continue; }
+        if ((m = tl.match(/^(!!!|\?\?\?)\s+(\w+)\s*(?:"([^"]*)")?\s*$/))) {
+          i++; var nb = [];
+          while (i < lines.length && (/^ {4}/.test(lines[i]) || !lines[i].trim())) { if (lines[i].trim()) nb.push(lines[i].replace(/^ {4}/, "")); else if (nb.length) nb.push(""); i++; }
+          push("nota", { titulo: m[3] || m[2], tipo: m[2], text: nb.join("\n").replace(/\n+$/, "") }); continue;
+        }
+        if ((m = tl.match(/^```(\w*)\s*$/))) { i++; var cb = hastaCierre(/^```/); push("codigo", { lang: m[1] || "", text: cb.join("\n") }); continue; }
+        if (/^\|.*\|\s*$/.test(tl) && i + 1 < lines.length && /^\|[\s:|-]+\|\s*$/.test(lines[i + 1].trim())) {
+          var celdas = function (row) { return row.trim().replace(/^\||\|$/g, "").split("|").map(function (c) { return c.trim().replace(/^\*\*|\*\*$/g, "").replace(/^`|`$/g, ""); }); };
+          var cols = celdas(l); i += 2; var trows = [];
+          while (i < lines.length && /^\|.*\|\s*$/.test(lines[i].trim())) { trows.push(celdas(lines[i])); i++; }
+          while (cols.length < 3) cols.push(""); trows = trows.map(function (r) { while (r.length < cols.length) r.push(""); return r.slice(0, cols.length); });
+          push("parametros", { cols: cols.slice(0, 3), rows: trows.map(function (r) { return r.slice(0, 3); }) }); continue;
+        }
+        if (RE_LINK.test(tl)) {
+          var files = [];
+          while (i < lines.length && (m = lines[i].trim().match(RE_LINK))) {
+            var rp = resolverRuta(m[2], pagePath);
+            files.push(rp ? { id: uid(), name: m[2].replace(/^.*\//, ""), desc: (m[3] || "").trim() || m[1], bytes: null, repoPath: rp, fijo: true } : { id: uid(), name: m[1], desc: (m[3] || "").trim(), url: m[2], bytes: null });
+            i++;
+          }
+          push("archivos", { files: files }); continue;
+        }
+        if ((m = tl.match(RE_IMG))) { push("imagen", { imgs: [imagenDesde(m[1], m[2], pagePath)], grande: false }); i++; continue; }
+        buffer.push(l); i++;
+      }
+      flushTexto();
+      return { titulo: titulo, meta: meta, bloques: nuevos };
+    }
+
+    function cargarDesdeMarkdown(mdText, pagePath) {
+      var r = importarMarkdown(mdText, pagePath);
+      ORIGEN = pagePath;
+      $("bc-titulo").value = r.titulo || pagePath.replace(/^.*\//, "").replace(/\.md$/, "");
+      $("bc-semana").value = r.meta || "";
+      var folder = (pagePath.match(/^docs\/([^/]+)\//) || [])[1];
+      var g = B.groups().filter(function (x) { return x.folder === folder; })[0];
+      ubic.set(g ? g.name : (folder ? null : null), pagePath.replace(/^.*\//, "").replace(/\.md$/, ""));
+      blocks = [];
+      r.bloques.forEach(function (bb) {
+        var b = add(bb.type, {}, true);
+        Object.keys(bb.data).forEach(function (k) { b.data[k] = bb.data[k]; });
+        b.open = bb.type !== "texto" || (bb.data.text || "").length < 400;
+      });
+      render(); updateRuta(); renderPreview(); saveDraft();
+      log("Página importada: " + r.bloques.length + " elementos. Los textos quedaron tal cual; las fotos y archivos ya publicados no hace falta volver a cargarlos. Al publicar se reemplaza la página " + pagePath.replace(/^docs\//, "") + ".");
+    }
+
+    /* abrir una página existente en el constructor */
+    (function () {
+      var sel = $("bc-abrir"), btn = $("bc-abrir-btn");
+      if (!sel) return;
+      function fill() {
+        var prev = sel.value;
+        sel.innerHTML = '<option value="">Abrir una página existente…</option>';
+        (B.paginas ? B.paginas() : []).forEach(function (p) { var o = document.createElement("option"); o.value = p; o.textContent = p.replace(/^docs\//, ""); sel.appendChild(o); });
+        if (prev) sel.value = prev;
+      }
+      fill();
+      setInterval(function () { if (sel.options.length !== (B.paginas ? B.paginas().length : 0) + 1) fill(); }, 2000);
+      btn.addEventListener("click", function () {
+        var p = sel.value;
+        if (!p) { log("Elegí la página en la lista.", true); return; }
+        if (blocks.length && !confirm("¿Reemplazar lo que hay en Armar página por \u201c" + p.replace(/^docs\//, "") + "\u201d?")) return;
+        log("Cargando " + p + "…");
+        B.gh.getText(p).then(function (f) {
+          var m = f.text.match(/<!-- bloques:([A-Za-z0-9+/=]+) -->/);
+          if (m) { try { loadData(JSON.parse(B.b64ToUtf8(m[1])), p, false); saveDraft(); log("Página cargada con sus elementos originales."); return; } catch (e) { /* se importa */ } }
+          cargarDesdeMarkdown(f.text, p);
+        }).catch(function (e) { log("No pude cargar: " + e.message, true); });
+      });
+    })();
+
     window.BitacoraConstructor = {
+      importar: function (mdText, path) {
+        if (blocks.length && !confirm("¿Reemplazar lo que hay en Armar página por esta página?")) return;
+        cargarDesdeMarkdown(mdText, path);
+      },
       load: function (json, path) {
         if (blocks.length && !confirm("¿Reemplazar lo que hay en Armar página por esta página?")) return;
         loadData(json, path, false);
