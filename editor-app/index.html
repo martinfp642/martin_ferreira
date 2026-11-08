@@ -1,0 +1,432 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Editor · Bitácora EFDI</title>
+<link rel="icon" href="../images/favicon.svg">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../stylesheets/extra.css">
+<link rel="stylesheet" href="editor-app.css">
+</head>
+<body class="be-page app">
+
+<header class="app-cabecera">
+  <a class="app-marca" href="../" title="Volver al sitio">◼ Bitácora EFDI</a>
+  <span class="app-sub">Editor</span>
+  <a class="app-link" href="../editor/" title="Página del editor en el sitio">Acerca del editor</a>
+  <a class="app-link" href="../plantillas/" target="_blank" rel="noopener">Plantillas</a>
+  <a class="app-link" href="../" target="_blank" rel="noopener">Ver el sitio ↗</a>
+</header>
+
+<main class="app-main md-typeset">
+<div id="bitacora-editor" class="be" data-owner="martinfp642" data-repo="martin_ferreira" data-branch="main" data-site="https://martinfp642.github.io/martin_ferreira/">
+
+<div class="be-toolbar">
+  <button type="button" data-panel="armar" aria-pressed="true"><span class="bc-ico">▦</span>Armar página</button>
+  <button type="button" data-panel="nueva"><span class="bc-ico">☰</span>Formulario</button>
+  <button type="button" data-panel="editar"><span class="bc-ico">&lt;/&gt;</span>Markdown</button>
+  <button type="button" data-panel="cuenta"><span class="bc-ico">●</span>Mi cuenta</button>
+  <button type="button" data-panel="ayuda"><span class="bc-ico">?</span>Ayuda</button>
+  <button type="button" class="be-status" id="be-status" title="Conectar o desconectar la cuenta">Sin conexión</button>
+</div>
+
+<!-- ============================ ARMAR PÁGINA ============================ -->
+<section class="be-panel active" data-panel="armar">
+<div id="be-constructor">
+
+<div class="bc-paso"><span class="bc-num">1</span>La página <small>Título, sección del menú y fecha.</small></div>
+
+<div class="be-row">
+  <div class="be-field">
+    <label for="bc-titulo">Título de la página</label>
+    <input type="text" id="bc-titulo" placeholder="Ej.: MT02 · Corte láser">
+  </div>
+  <div class="be-field">
+    <label for="bc-semana">Semana · fecha <small>Se muestra debajo del título</small></label>
+    <input type="text" id="bc-semana" placeholder="Semana 3 · 2025-11-10">
+  </div>
+</div>
+<div class="be-ubic" id="bc-ubic"></div>
+
+<div class="bc-paso"><span class="bc-num">2</span>Los elementos <small>Agregá, completá y ordená. Hacé clic en la barra negra de un elemento para plegarlo o desplegarlo; arrastrala para moverlo.</small></div>
+
+<div class="bc-paleta" id="bc-paleta">
+  <span class="bc-paleta-titulo">Agregar al final</span>
+  <button type="button" data-add="titulo"><span class="bc-ico">H</span>Título</button>
+  <button type="button" data-add="texto"><span class="bc-ico">¶</span>Texto</button>
+  <button type="button" data-add="imagen"><span class="bc-ico">▣</span>Imagen</button>
+  <button type="button" data-add="carrete"><span class="bc-ico">⧉</span>Carrete</button>
+  <button type="button" data-add="galeria"><span class="bc-ico">▦</span>Galería</button>
+  <button type="button" data-add="comparar"><span class="bc-ico">◧</span>Antes / después</button>
+  <button type="button" data-add="hero"><span class="bc-ico">▬</span>Hero shot</button>
+  <button type="button" data-add="datos"><span class="bc-ico">☰</span>Ficha de datos</button>
+  <button type="button" data-add="parametros"><span class="bc-ico">⊞</span>Tabla</button>
+  <button type="button" data-add="linea"><span class="bc-ico">⋮</span>Línea de tiempo</button>
+  <button type="button" data-add="resultado"><span class="bc-ico">✓</span>Resultado</button>
+  <button type="button" data-add="nota"><span class="bc-ico">!</span>Nota</button>
+  <button type="button" data-add="video"><span class="bc-ico">▶</span>Video</button>
+  <button type="button" data-add="codigo"><span class="bc-ico">&lt;/&gt;</span>Código</button>
+  <button type="button" data-add="archivos"><span class="bc-ico">⇩</span>Archivos</button>
+</div>
+
+<div class="bc-plantillas" id="bc-plantillas"></div>
+
+<div class="bc-work" id="bc-work">
+  <div class="bc-bloques" id="bc-bloques">
+    <p class="be-kv bc-vacio">Todavía no hay elementos. Elegí uno arriba, o empezá con una estructura.</p>
+  </div>
+  <div class="bc-previa">
+    <div class="bc-previa-titulo">Vista previa <button type="button" class="small" data-previa-full="bc-preview" title="Ver como en el sitio">⤢ Pantalla completa</button><button type="button" class="small" id="bc-previa-toggle">Ocultar</button></div>
+    <div class="be-preview md-typeset" id="bc-preview"></div>
+  </div>
+</div>
+
+<div class="bc-paso"><span class="bc-num">3</span>Publicar <small>Un solo commit con la página, las fotos, los archivos y el menú. Sin cuenta conectada, copiá o descargá el Markdown.</small></div>
+
+<div class="bc-acciones">
+  <div class="be-actions" style="margin:0">
+    <button type="button" class="primary" id="bc-publicar">Publicar en el sitio</button>
+    <button type="button" id="bc-abrir-texto">Abrir en el editor de texto</button>
+    <button type="button" id="bc-copiar">Copiar Markdown</button>
+    <button type="button" id="bc-descargar">Descargar .md</button>
+    <button type="button" id="bc-limpiar">Vaciar</button>
+    <span class="bc-contador" id="bc-contador"></span>
+  </div>
+</div>
+<div class="be-log" id="bc-log">Los elementos y las fotos se guardan en este navegador mientras trabajás.</div>
+
+</div>
+</section>
+
+<!-- ============================ NUEVA ENTRADA ============================ -->
+<section class="be-panel" data-panel="nueva">
+
+<div class="be-row">
+  <div class="be-field">
+    <label for="be-titulo">Título</label>
+    <input type="text" id="be-titulo" placeholder="Ej.: Primer corte láser">
+  </div>
+  <div class="be-field">
+    <label for="be-seccion">Sección <small>Dónde aparece en el menú</small></label>
+    <select id="be-seccion"></select>
+    <input type="text" id="be-seccion-nueva" placeholder="Nombre de la sección nueva" style="display:none;margin-top:.4rem">
+  </div>
+</div>
+
+<div class="be-row">
+  <div class="be-field">
+    <label for="be-fecha">Fecha</label>
+    <input type="date" id="be-fecha">
+  </div>
+  <div class="be-field">
+    <label for="be-semana">Semana o bloque <small>Ej.: Semana 3 · MT02</small></label>
+    <input type="text" id="be-semana" placeholder="Semana 3">
+  </div>
+  <div class="be-field">
+    <label for="be-slug">Nombre del archivo <small>Se genera solo desde el título</small></label>
+    <input type="text" id="be-slug" placeholder="primer-corte-laser">
+    <span class="hint be-kv" id="be-ruta"></span>
+  </div>
+</div>
+
+<div class="be-section">
+  <h3><span class="be-num">1</span>Introducción</h3>
+  <div class="be-field">
+    <label for="be-intro">Objetivo de la semana <small>Qué quería lograr y por qué.</small></label>
+    <textarea id="be-intro"></textarea>
+  </div>
+</div>
+
+<div class="be-section">
+  <h3><span class="be-num">2</span>Investigación y referencias</h3>
+  <div class="be-field">
+    <label for="be-investigacion">Fuentes, enlaces, inspiración <small>Si usé IA, lo digo y pego los prompts.</small></label>
+    <textarea id="be-investigacion"></textarea>
+  </div>
+</div>
+
+<div class="be-section">
+  <h3><span class="be-num">3</span>Proceso paso a paso</h3>
+  <div class="be-field">
+    <label for="be-proceso">Qué hice, con qué herramientas y materiales <small>Una línea por paso. Las imágenes se insertan donde esté el cursor con el botón de cada foto.</small></label>
+    <div class="be-tb be-tb-mini" id="be-tb-proceso">
+      <div class="be-tb-group">
+        <button type="button" data-fmt="bold" title="Negrita"><b>B</b></button>
+        <button type="button" data-fmt="h3" title="Subtítulo">H3</button>
+        <button type="button" data-fmt="ul" title="Lista">• Lista</button>
+        <button type="button" data-fmt="link" title="Enlace">Enlace</button>
+        <button type="button" data-block="carrete">Carrete</button>
+        <button type="button" data-block="galeria">Galería</button>
+        <button type="button" data-block="comparar">Comparar</button>
+        <button type="button" data-block="datos">Datos</button>
+        <button type="button" data-block="video">Video</button>
+      </div>
+    </div>
+    <textarea id="be-proceso" style="min-height:11rem"></textarea>
+  </div>
+  <div class="be-field">
+    <label>Imágenes <small>Se comprimen en el navegador (máx. 1600 px) antes de subirlas al repositorio.</small></label>
+    <div class="be-drop" id="be-drop">Arrastrá fotos o capturas acá, o hacé clic para elegirlas</div>
+    <input type="file" id="be-files" accept="image/*" multiple style="display:none">
+    <div class="be-images" id="be-images"></div>
+    <div class="be-actions" style="margin:.6rem 0 0">
+      <button type="button" class="small" id="be-ins-carrete">Insertar carrete con todas</button>
+      <button type="button" class="small" id="be-ins-galeria">Insertar galería con todas</button>
+    </div>
+    <label class="be-check"><input type="checkbox" id="be-carrete" checked> Las fotos que no inserte en el texto van juntas en un carrete al final del proceso</label>
+  </div>
+</div>
+
+<div class="be-section">
+  <h3><span class="be-num">4</span>Resultados</h3>
+  <div class="be-split two">
+    <div class="be-field">
+      <label for="be-ok">Lo que funcionó</label>
+      <textarea id="be-ok"></textarea>
+    </div>
+    <div class="be-field">
+      <label for="be-fail">Lo que falló <small>Fracaso ≠ error. Acá es donde más aprendo.</small></label>
+      <textarea id="be-fail"></textarea>
+    </div>
+  </div>
+</div>
+
+<div class="be-section">
+  <h3><span class="be-num">5</span>Reflexión</h3>
+  <div class="be-field">
+    <label for="be-reflexion">Qué aprendí, qué mejoraría</label>
+    <textarea id="be-reflexion"></textarea>
+  </div>
+</div>
+
+<div class="be-section">
+  <h3><span class="be-num">6</span>Archivos</h3>
+  <div class="be-field">
+    <label for="be-archivos">Enlaces a los archivos del repositorio <small>Formato editable original + exportación abierta. Más de 10 MB: consultar antes.</small></label>
+    <textarea id="be-archivos" placeholder="- [polea.scad](../files/polea.scad)&#10;- [polea.stl](../files/polea.stl)"></textarea>
+  </div>
+</div>
+
+<div class="be-section">
+  <h3><span class="be-num">7</span>Atribución y uso de IA</h3>
+  <div class="be-field">
+    <label for="be-ia">A quién le debo qué <small>Colegas, recursos, licencias. Si hubo IA: para qué la usé y la etiqueta <a href="https://santifu.github.io/ccl/" target="_blank" rel="noopener">CCL</a>.</small></label>
+    <textarea id="be-ia"></textarea>
+  </div>
+</div>
+
+<div class="be-actions">
+  <button type="button" class="primary" id="be-publicar">Publicar en el sitio</button>
+  <button type="button" id="be-previsualizar">Vista previa</button>
+  <button type="button" id="be-copiar">Copiar Markdown</button>
+  <button type="button" id="be-descargar">Descargar .md</button>
+  <button type="button" id="be-limpiar">Limpiar formulario</button>
+</div>
+
+<div class="be-log" id="be-log">El borrador se guarda solo en este navegador mientras escribís.</div>
+<div class="be-preview md-typeset" id="be-preview" style="display:none"></div>
+
+</section>
+
+<!-- ============================ EDITAR ARCHIVO ============================ -->
+<section class="be-panel" data-panel="editar">
+
+<div class="be-filebar">
+  <div class="be-field grow">
+    <label for="be-archivo">Página existente <small>Páginas en <code>docs/</code>, estilos, scripts y <code>mkdocs.yml</code> (el menú).</small></label>
+    <select id="be-archivo"><option value="">Conectate o elegí una página…</option></select>
+  </div>
+  <div class="be-filebar-actions">
+    <button type="button" class="small primary" id="be-nueva-md">+ Nueva desde Markdown</button>
+    <button type="button" class="small" id="be-nueva-pagina">+ Nueva desde plantilla</button>
+    <button type="button" class="small" id="be-al-constructor" style="display:none">Abrir en Armar página</button>
+    <button type="button" class="small" id="be-recargar">Actualizar lista</button>
+    <a id="be-ver" class="md-button" href="#" target="_blank" rel="noopener" style="display:none">Ver en el sitio</a>
+  </div>
+</div>
+
+<div class="be-np" id="be-np" style="display:none">
+  <div class="be-row">
+    <div class="be-field">
+      <label for="be-np-seccion">Sección</label>
+      <select id="be-np-seccion"></select>
+    </div>
+    <div class="be-field">
+      <label for="be-np-plantilla">Plantilla</label>
+      <select id="be-np-plantilla">
+        <option value="tecnologia">Tecnología y Fabricación</option>
+        <option value="diseno">Diseño</option>
+        <option value="innovacion">Innovación</option>
+        <option value="proyecto">Proyecto Integrador</option>
+        <option value="referencia">Referencias</option>
+        <option value="">Vacía</option>
+      </select>
+    </div>
+    <div class="be-field">
+      <label for="be-np-titulo">Título</label>
+      <input type="text" id="be-np-titulo" placeholder="Ej.: MT02 · Corte láser">
+      <span class="hint be-kv" id="be-np-ruta"></span>
+    </div>
+  </div>
+  <div class="be-actions" style="margin:0 0 .5rem">
+    <button type="button" class="primary small" id="be-np-crear">Crear y abrir en el editor</button>
+    <button type="button" class="small" id="be-np-cancelar">Cancelar</button>
+  </div>
+</div>
+
+<div class="be-ubic" id="be-ubic-editar" style="display:none"></div>
+
+<div class="be-tb" id="be-tb">
+  <div class="be-tb-group" data-help="Formato">
+    <button type="button" data-fmt="bold" title="Negrita (Ctrl+B)"><b>B</b></button>
+    <button type="button" data-fmt="italic" title="Cursiva (Ctrl+I)"><i>I</i></button>
+    <button type="button" data-fmt="h2" title="Título de sección">H2</button>
+    <button type="button" data-fmt="h3" title="Subtítulo">H3</button>
+    <button type="button" data-fmt="ul" title="Lista">• Lista</button>
+    <button type="button" data-fmt="ol" title="Lista numerada">1. Lista</button>
+    <button type="button" data-fmt="link" title="Enlace (Ctrl+K)">Enlace</button>
+    <button type="button" data-fmt="code" title="Código">&lt;/&gt;</button>
+    <button type="button" data-fmt="quote" title="Cita">“ Cita</button>
+    <button type="button" data-fmt="table" title="Tabla">Tabla</button>
+  </div>
+  <div class="be-tb-group" data-help="Bloques">
+    <button type="button" data-block="carrete" title="Carrusel de fotos">Carrete</button>
+    <button type="button" data-block="galeria" title="Grilla de fotos">Galería</button>
+    <button type="button" data-block="comparar" title="Antes / después">Comparar</button>
+    <button type="button" data-block="hero" title="Foto grande del resultado">Hero shot</button>
+    <button type="button" data-block="datos" title="Ficha de datos">Datos</button>
+    <button type="button" data-block="linea" title="Línea de tiempo">Línea</button>
+    <button type="button" data-block="video" title="Video de YouTube o Vimeo">Video</button>
+    <button type="button" data-block="ok" title="Etiqueta de éxito">Éxito</button>
+    <button type="button" data-block="fail" title="Etiqueta de fallo">Falló</button>
+    <button type="button" data-block="nota" title="Recuadro de nota">Nota</button>
+  </div>
+  <div class="be-tb-group be-tb-right" data-help="Vista">
+    <button type="button" data-view="editar">Texto</button>
+    <button type="button" data-view="dividido" aria-pressed="true">Dividido</button>
+    <button type="button" data-view="previa">Vista previa</button>
+    <button type="button" data-previa-full="be-preview2" title="Ver la vista previa como en el sitio">Ver como en el sitio</button>
+    <button type="button" id="be-full" title="Editor a pantalla completa">⤢</button>
+  </div>
+</div>
+
+<div class="be-work" id="be-work" data-view="dividido">
+  <div class="be-col be-col-texto">
+    <textarea id="be-contenido" class="code" spellcheck="false" placeholder="Elegí una página arriba o creá una nueva."></textarea>
+  </div>
+  <div class="be-col be-col-previa">
+    <div class="be-preview md-typeset" id="be-preview2"><p class="be-kv">La vista previa aparece acá mientras escribís.</p></div>
+  </div>
+</div>
+
+<div class="be-field">
+  <label>Imágenes para esta página <small>Se suben junto con el archivo al guardar; el enlace se inserta donde esté el cursor.</small></label>
+  <div class="be-drop" id="be-drop2">Arrastrá imágenes acá, o hacé clic para elegirlas</div>
+  <input type="file" id="be-files2" accept="image/*" multiple style="display:none">
+  <div class="be-images" id="be-images2"></div>
+  <div class="be-actions" style="margin:.6rem 0 0">
+    <button type="button" class="small" id="be-ins-carrete2">Insertar carrete con todas</button>
+    <button type="button" class="small" id="be-ins-galeria2">Insertar galería con todas</button>
+  </div>
+</div>
+
+<div class="be-field">
+  <label for="be-mensaje">Mensaje del commit <small>Qué cambiaste, en una línea.</small></label>
+  <input type="text" id="be-mensaje" placeholder="Corrijo rutas de imágenes en MT01">
+</div>
+
+<div class="be-actions">
+  <button type="button" class="primary" id="be-guardar">Guardar en el repositorio <small>Ctrl+S</small></button>
+  <button type="button" id="be-borrar">Borrar archivo</button>
+  <span class="be-dirty" id="be-dirty"></span>
+</div>
+
+<div class="be-log" id="be-log2">Elegí una página.</div>
+
+</section>
+
+<!-- ============================ MI CUENTA ============================ -->
+<section class="be-panel" data-panel="cuenta">
+
+<p>La página es pública, pero <strong>solo quien tenga un token de mi cuenta de GitHub puede publicar</strong>. El token se guarda únicamente en este navegador y viaja directo a la API de GitHub: no pasa por ningún otro servidor.</p>
+
+<div class="be-field">
+  <label for="be-token">Token personal de GitHub <small>Fine-grained, con permiso <em>Contents: Read and write</em> solo sobre este repositorio. Ver Ayuda.</small></label>
+  <input type="password" id="be-token" placeholder="github_pat_…" autocomplete="off">
+</div>
+
+<label class="be-check"><input type="checkbox" id="be-recordar" checked> Recordar en este navegador (no lo marques en una computadora compartida)</label>
+
+<div class="be-actions">
+  <button type="button" class="primary" id="be-conectar">Conectar</button>
+  <button type="button" id="be-olvidar">Olvidar token</button>
+</div>
+
+<div class="be-log" id="be-log3">Sin token guardado.</div>
+
+</section>
+
+<!-- ============================ AYUDA ============================ -->
+<section class="be-panel" data-panel="ayuda">
+
+<h3>Crear el token (una sola vez)</h3>
+<ol class="pasos">
+  <li>En GitHub: <strong>Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token</strong>.</li>
+  <li><strong>Repository access</strong>: <em>Only select repositories</em> → elegí <code>martin_ferreira</code>.</li>
+  <li><strong>Permissions → Repository permissions → Contents</strong>: <em>Read and write</em>. <em>Metadata</em> queda en <em>Read</em> solo.</li>
+  <li>Elegí un vencimiento (por ejemplo, 90 días), generá el token y pegalo en <strong>Mi cuenta</strong>.</li>
+</ol>
+
+<h3>Qué pasa al publicar</h3>
+<ol class="pasos">
+  <li>El editor arma el Markdown con la estructura de la guía (Introducción, Investigación, Proceso, Resultados, Reflexión, Archivos, Atribución).</li>
+  <li>Comprime las imágenes y las sube a <code>docs/images/&lt;sección&gt;/&lt;entrada&gt;/</code>.</li>
+  <li>Agrega la página al menú en <code>mkdocs.yml</code> y hace <strong>un solo commit</strong> en la rama <code>main</code>.</li>
+  <li>GitHub Actions reconstruye el sitio. Tarda uno o dos minutos; el avance se ve en <a href="https://github.com/martinfp642/martin_ferreira/actions" target="_blank" rel="noopener">Actions</a>.</li>
+</ol>
+
+<h3>Armar página</h3>
+<ul>
+  <li>Elegís elementos de la paleta (título, texto, imagen, carrete, galería, antes/después, ficha, tabla, línea de tiempo, resultado, nota, video, código, archivos) y completás sus campos. Cada elemento se mueve con las flechas o se quita con ×.</li>
+  <li>Las fotos se arrastran dentro de cada elemento; el pie de foto se escribe debajo de cada una.</li>
+  <li>El elemento <strong>Archivos</strong> tiene dos caminos: subir el archivo al repositorio (queda en <code>docs/files/</code>; hasta 10 MB sin aviso, hasta 50 MB con confirmación) o <strong>agregar un enlace</strong> a Google Drive, YouTube u otro sitio. Para Drive: subir el archivo, <em>Compartir → Cualquier persona con el enlace</em>, copiar el enlace y pegarlo.</li>
+  <li>La vista previa de la derecha muestra la página tal como va a quedar. <strong>Publicar</strong> sube la página, las fotos y los archivos en un solo commit y la agrega al menú.</li>
+  <li>Una página armada así se puede volver a abrir en el constructor desde <strong>Editar archivo</strong> (botón "Abrir en Armar página").</li>
+</ul>
+
+<h3>Markdown</h3>
+<ul>
+  <li><strong>+ Nueva desde Markdown</strong>: pegá o escribí el texto (por ejemplo, uno que te generó otra IA), mirá la vista previa con el estilo del sitio, elegí sección y posición en el menú, y guardá. El título se toma del primer <code>#</code>.</li>
+  <li><strong>Ubicación</strong>: sección existente, nivel principal o sección nueva; y posición al principio, al final o después de una página concreta.</li>
+  <li><strong>Ver como en el sitio</strong> abre la vista previa a pantalla completa con el ancho real de la página.</li>
+</ul>
+
+<h3>Editor de páginas</h3>
+<ul>
+  <li><strong>+ Página nueva</strong> crea una página en la sección elegida a partir de una plantilla, y al guardar la agrega al menú.</li>
+  <li>La barra <strong>Formato</strong> aplica negrita, títulos, listas, enlaces y tablas al texto seleccionado. La barra <strong>Bloques</strong> inserta carrete, galería, comparación, ficha de datos, línea de tiempo, video y etiquetas de resultado. Si hay fotos cargadas, el carrete y la galería se arman con ellas.</li>
+  <li>La vista previa se actualiza sola mientras escribís, con los carretes funcionando. Se puede ver solo el texto, solo la vista previa, o las dos en paralelo. El botón <strong>⤢</strong> pone el editor a pantalla completa (Esc para salir).</li>
+  <li>Atajos: <kbd>Ctrl</kbd>+<kbd>B</kbd> negrita, <kbd>Ctrl</kbd>+<kbd>I</kbd> cursiva, <kbd>Ctrl</kbd>+<kbd>K</kbd> enlace, <kbd>Ctrl</kbd>+<kbd>S</kbd> guardar.</li>
+</ul>
+
+<h3>Sin token</h3>
+<p>Igual podés escribir la entrada, <strong>copiar el Markdown</strong> o <strong>descargar el .md</strong> y subirlo después desde Visual Studio Code, como hasta ahora.</p>
+
+<h3>Si algo no anda</h3>
+<ul>
+  <li><strong>401 o 403</strong> → el token venció o no tiene <em>Contents: Read and write</em> sobre este repositorio.</li>
+  <li><strong>409 o 422</strong> → alguien (o vos, desde otra computadora) cambió el repositorio mientras editabas. Actualizá la lista y volvé a intentar.</li>
+  <li><strong>La página no aparece</strong> → mirá Actions: si el build falló, el error suele ser una ruta de imagen o una línea mal indentada en <code>mkdocs.yml</code>. Se corrige desde <strong>Editar archivo</strong>.</li>
+</ul>
+
+</section>
+
+</div>
+</main>
+
+<script src="../javascripts/bitacora.js"></script>
+<script src="../javascripts/editor.js"></script>
+<script src="../javascripts/constructor.js"></script>
+</body>
+</html>

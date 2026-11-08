@@ -393,6 +393,8 @@
       if (start < 0 && /^nav:\s*$/.test(lines[i])) { start = i; continue; }
       if (start >= 0 && i > start && /^\S/.test(lines[i])) { end = i; break; }
     }
+    // el bloque termina en la última línea con contenido (sin las vacías del final)
+    while (end > start + 1 && /^\s*$/.test(lines[end - 1])) end--;
     return { lines: lines, start: start, end: end };
   }
 
@@ -412,6 +414,77 @@
       groups.push({ name: name, line: i, folder: folder });
     }
     return groups;
+  }
+
+  /* Páginas de una sección (o del nivel principal si groupName es null) */
+  function navItems(yaml, groupName) {
+    var nb = navBlock(yaml), out = [];
+    if (nb.start < 0) return out;
+    if (groupName == null) {
+      for (var i = nb.start + 1; i < nb.end; i++) {
+        var m = nb.lines[i].match(/^  - (.+?):\s*(\S*)\s*$/);
+        if (m) out.push({ title: m[1].replace(/^["']|["']$/g, ""), path: m[2] || null, line: i, group: !m[2] });
+      }
+      return out;
+    }
+    var g = navGroups(yaml).filter(function (x) { return x.name === groupName; })[0];
+    if (!g) return out;
+    for (var j = g.line + 1; j < nb.end; j++) {
+      if (!/^ {6}/.test(nb.lines[j])) break;
+      var c = nb.lines[j].match(/^ {6}- (.+?):\s*(\S+)\s*$/);
+      if (c) out.push({ title: c[1].replace(/^["']|["']$/g, ""), path: c[2], line: j });
+    }
+    return out;
+  }
+
+  /* Inserta una página en el menú en la posición pedida.
+     opts: { group: nombre|null (nivel principal), title, relPath,
+             position: "end" | "start" | "after:<path o título>",
+             newGroupBefore: título de nivel principal antes del cual va la sección nueva (opcional) } */
+  function navInsertAt(yaml, opts) {
+    var nb = navBlock(yaml);
+    if (nb.start < 0) throw new Error("No encontré el bloque nav: en mkdocs.yml");
+    if (yaml.indexOf(": " + opts.relPath) >= 0) return yaml;
+    var lines = nb.lines, pos = opts.position || "end";
+    var afterKey = pos.indexOf("after:") === 0 ? pos.slice(6) : null;
+
+    if (opts.group == null) {
+      var tops = navItems(yaml, null);
+      var entry = "  - " + yamlQuote(opts.title) + ": " + opts.relPath;
+      var at = nb.end;
+      if (pos === "start") at = nb.start + 1;
+      else if (afterKey) {
+        var t = tops.filter(function (x) { return x.path === afterKey || x.title === afterKey; })[0];
+        if (t) { at = t.line + 1; while (at < nb.end && /^ {4,}/.test(lines[at])) at++; }
+      }
+      lines.splice(at, 0, entry);
+      return lines.join("\n");
+    }
+
+    var child = "      - " + yamlQuote(opts.title) + ": " + opts.relPath;
+    var g = navGroups(yaml).filter(function (x) { return x.name === opts.group; })[0];
+    if (g) {
+      var items = navItems(yaml, opts.group);
+      var k;
+      if (pos === "start") k = g.line + 1;
+      else if (afterKey) {
+        var it = items.filter(function (x) { return x.path === afterKey || x.title === afterKey; })[0];
+        k = it ? it.line + 1 : null;
+      }
+      if (k == null) { k = g.line + 1; while (k < nb.end && /^ {6}/.test(lines[k])) k++; }
+      lines.splice(k, 0, child);
+    } else {
+      var where = nb.end;
+      var tops2 = navItems(yaml, null);
+      if (opts.newGroupBefore) {
+        var b = tops2.filter(function (x) { return x.title === opts.newGroupBefore; })[0];
+        if (b) where = b.line;
+      } else {
+        for (var i = nb.start + 1; i < nb.end; i++) { if (/^  - Editor:/.test(lines[i])) { where = i; break; } }
+      }
+      lines.splice(where, 0, "  - " + yamlQuote(opts.group) + ":", child);
+    }
+    return lines.join("\n");
   }
 
   function navInsert(yaml, groupName, title, relPath) {
@@ -492,6 +565,95 @@
 
   function figure(im) {
     return '<figure markdown>\n  ![' + (im.caption || im.name) + "](" + im.rel + ")\n  <figcaption>" + escapeHtml(im.caption || "") + "</figcaption>\n</figure>";
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Ubicación en el menú: sección + posición + nombre de archivo        */
+  /* ------------------------------------------------------------------ */
+  function makeUbicacion(box, ctx) {
+    // ctx: { groups(), navYaml(), getTitle(), onChange() }
+    box.innerHTML =
+      '<div class="be-row">' +
+      '<div class="be-field"><label>Sección <small>Dónde aparece en el menú</small></label><select class="ubic-seccion"></select>' +
+      '<input type="text" class="ubic-seccion-nueva" placeholder="Nombre de la sección nueva" style="display:none;margin-top:.4rem"></div>' +
+      '<div class="be-field"><label>Posición <small>Dentro de la sección</small></label><select class="ubic-posicion"></select></div>' +
+      '<div class="be-field"><label>Nombre del archivo <small>Se genera solo desde el título</small></label><input type="text" class="ubic-slug" placeholder="nombre-de-la-pagina"><span class="hint be-kv ubic-ruta"></span></div>' +
+      "</div>";
+    var sel = box.querySelector(".ubic-seccion"), nueva = box.querySelector(".ubic-seccion-nueva"),
+        posSel = box.querySelector(".ubic-posicion"), slugIn = box.querySelector(".ubic-slug"), ruta = box.querySelector(".ubic-ruta");
+    var manual = false;
+
+    function fillSections() {
+      var prev = sel.value;
+      sel.innerHTML = "";
+      ctx.groups().forEach(function (g) { var o = document.createElement("option"); o.value = g.name; o.textContent = g.name; sel.appendChild(o); });
+      var top = document.createElement("option"); top.value = "__top__"; top.textContent = "Nivel principal (sin sección)"; sel.appendChild(top);
+      var n = document.createElement("option"); n.value = "__nueva__"; n.textContent = "Sección nueva…"; sel.appendChild(n);
+      if (prev) sel.value = prev;
+      if (!sel.value && ctx.groups().length) sel.value = ctx.groups()[0].name;
+      fillPositions();
+    }
+    function fillPositions() {
+      var prev = posSel.value;
+      posSel.innerHTML = "";
+      var add = function (v, t) { var o = document.createElement("option"); o.value = v; o.textContent = t; posSel.appendChild(o); };
+      var yaml = ctx.navYaml();
+      if (sel.value === "__nueva__") {
+        add("end", "Al final del menú");
+        if (yaml) navItems(yaml, null).forEach(function (t) { add("before:" + t.title, "Antes de \u201c" + t.title + "\u201d"); });
+      } else {
+        add("end", "Al final");
+        add("start", "Al principio");
+        if (yaml) navItems(yaml, sel.value === "__top__" ? null : sel.value).forEach(function (it) { add("after:" + (it.path || it.title), "Después de \u201c" + it.title + "\u201d"); });
+      }
+      if (prev) posSel.value = prev;
+      if (!posSel.value) posSel.value = "end";
+    }
+    function group() {
+      var v = sel.value;
+      if (v === "__top__") return { name: null, folder: "", top: true };
+      if (v === "__nueva__") { var name = nueva.value.trim(); return { name: name, folder: slugify(name) || "seccion", nueva: true }; }
+      return ctx.groups().filter(function (g) { return g.name === v; })[0] || { name: v, folder: slugify(v) };
+    }
+    function slug() { return slugIn.value.trim() || slugify(ctx.getTitle()) || "pagina"; }
+    function path() { var g = group(); return "docs/" + (g.folder ? g.folder + "/" : "") + slug() + ".md"; }
+    function refresh() {
+      if (!manual) slugIn.value = slugify(ctx.getTitle());
+      ruta.textContent = path();
+    }
+    function insertOpts(title, relPath) {
+      var g = group(), p = posSel.value || "end";
+      var o = { group: g.name, title: title, relPath: relPath, position: p };
+      if (g.nueva && p.indexOf("before:") === 0) { o.newGroupBefore = p.slice(7); o.position = "end"; }
+      return o;
+    }
+    sel.addEventListener("change", function () { nueva.style.display = sel.value === "__nueva__" ? "block" : "none"; fillPositions(); refresh(); ctx.onChange && ctx.onChange(); });
+    nueva.addEventListener("input", function () { refresh(); ctx.onChange && ctx.onChange(); });
+    posSel.addEventListener("change", function () { ctx.onChange && ctx.onChange(); });
+    slugIn.addEventListener("input", function () { manual = !!slugIn.value; refresh(); ctx.onChange && ctx.onChange(); });
+    fillSections();
+    return {
+      group: group, slug: slug, path: path, refresh: refresh, fillSections: fillSections, insertOpts: insertOpts,
+      set: function (name, slugValue) {
+        fillSections();
+        if (name == null) sel.value = "__top__";
+        else if (ctx.groups().some(function (g) { return g.name === name; })) sel.value = name;
+        else { sel.value = "__nueva__"; nueva.value = name; nueva.style.display = "block"; }
+        if (slugValue) { slugIn.value = slugValue; manual = true; }
+        fillPositions(); refresh();
+      },
+      value: function () { return { seccion: sel.value, nueva: nueva.value, posicion: posSel.value, slug: manual ? slugIn.value : "" }; },
+      restore: function (v) {
+        if (!v) return;
+        fillSections();
+        if (v.seccion) sel.value = v.seccion;
+        if (v.nueva) { nueva.value = v.nueva; nueva.style.display = sel.value === "__nueva__" ? "block" : "none"; }
+        fillPositions();
+        if (v.posicion) posSel.value = v.posicion;
+        if (v.slug) { slugIn.value = v.slug; manual = true; }
+        refresh();
+      }
+    };
   }
 
   /* ------------------------------------------------------------------ */
@@ -599,11 +761,13 @@
       updateRuta();
     }
 
+    var onNavLoaded = [];
     function loadNav() {
       return gh.getText("mkdocs.yml").then(function (f) {
         navYaml = f.text;
         groups = navGroups(navYaml).filter(function (g) { return g.folder; });
         fillSections();
+        onNavLoaded.forEach(function (fn) { try { fn(); } catch (e) { /* nada */ } });
       });
     }
 
@@ -935,8 +1099,35 @@
       loadTree().then(function () { log("be-log2", "Lista actualizada."); });
     });
 
+    $("be-nueva-md").addEventListener("click", function () {
+      if (dirty && !confirm("Hay cambios sin guardar. ¿Empezar una página nueva igual?")) return;
+      $("be-np").style.display = "none";
+      $("be-archivo").value = "";
+      editFile = null;
+      ubicEditar.fillSections(); ubicEditar.refresh();
+      openFile(ubicEditar.path(), "# Título de la página\n\nPegá o escribí acá el Markdown.\n", null, true);
+      $("be-contenido").focus(); $("be-contenido").select();
+      log("be-log2", "Página nueva. Pegá el Markdown, elegí la ubicación en el menú y guardá.");
+    });
+    $("be-contenido").addEventListener("input", function () {
+      if (editFile && editFile.nuevo) { ubicEditar.refresh(); editFile.path = ubicEditar.path(); }
+    });
+
+    var ubicEditar = makeUbicacion($("be-ubic-editar"), {
+      groups: function () { return groups; },
+      navYaml: function () { return navYaml; },
+      getTitle: function () { return tituloDe($("be-contenido").value) || $("be-np-titulo").value; },
+      onChange: function () { if (editFile && editFile.nuevo) { editFile.path = ubicEditar.path(); schedulePreview(0); } }
+    });
+    function tituloDe(md) {
+      var m = md.match(/^---\n[\s\S]*?\btitle:\s*(.+)\n[\s\S]*?---/) || md.match(/^#\s+(.+)$/m);
+      return m ? m[1].trim().replace(/^["']|["']$/g, "") : "";
+    }
+    function showUbic(show) { $("be-ubic-editar").style.display = show ? "block" : "none"; }
+
     function openFile(p, text, sha, nuevo) {
       editFile = { path: p, sha: sha || null, nuevo: !!nuevo };
+      showUbic(!!nuevo);
       $("be-contenido").value = text;
       $("be-al-constructor").style.display = /<!-- bloques:/.test(text) ? "inline-block" : "none";
       $("be-mensaje").value = (nuevo ? "Nueva página: " : "Edito ") + p.replace(/^docs\//, "");
@@ -1064,8 +1255,8 @@
         text = text.replace(/AAAA-MM-DD/g, today());
         editFile = null;
         $("be-archivo").value = "";
-        openFile(path, text, null, true);
-        editFile.group = g;
+        ubicEditar.set(g.name, slugify(titulo));
+        openFile(ubicEditar.path(), text, null, true);
         editFile.titulo = titulo;
         $("be-np").style.display = "none";
         log("be-log2", "Página nueva lista. Reemplazá los textos en cursiva y las fotos de ejemplo, y guardá.");
@@ -1076,13 +1267,20 @@
       if (!editFile) { log("be-log2", "Elegí una página primero.", true); return; }
       if (!gh.token) { log("be-log2", "Para guardar hace falta conectar tu cuenta (pestaña Mi cuenta).", true); return; }
       var btn = this; btn.disabled = true;
+      if (editFile.nuevo) {
+        editFile.path = ubicEditar.path();
+        editFile.titulo = tituloDe($("be-contenido").value) || editFile.titulo || ubicEditar.slug();
+        var gg = ubicEditar.group();
+        if (gg.nueva && !gg.name) { log("be-log2", "Poné el nombre de la sección nueva.", true); btn.disabled = false; return; }
+      }
       var files = [{ path: editFile.path, text: $("be-contenido").value }];
       imgsEdit.forEach(function (im) { files.push({ path: im.repoPath, bytes: im.bytes }); });
-      var msg = ($("be-mensaje").value.trim() || "Edito " + editFile.path) + "\n\nEditado desde la bitácora.";
+      var msg = ($("be-mensaje").value.trim() || (editFile.nuevo ? "Nueva página: " : "Edito ") + editFile.path.replace(/^docs\//, "")) + "\n\nEditado desde la bitácora.";
       var pre = Promise.resolve();
-      if (editFile.nuevo && editFile.group) {
-        pre = loadNav().then(function () {
-          var y = navInsert(navYaml, editFile.group.name, editFile.titulo, editFile.path.replace(/^docs\//, ""));
+      if (editFile.nuevo) {
+        pre = loadNav().then(function () { return gh.exists(editFile.path); }).then(function (exists) {
+          if (exists && !confirm("Ya existe " + editFile.path + ". ¿La reemplazo?")) throw new Error("Cancelado.");
+          var y = navInsertAt(navYaml, ubicEditar.insertOpts(editFile.titulo, editFile.path.replace(/^docs\//, "")));
           if (y !== navYaml) files.push({ path: "mkdocs.yml", text: y });
         });
       }
@@ -1091,6 +1289,7 @@
       }).then(function (c) {
         var wasNew = editFile.nuevo;
         editFile.nuevo = false; delete editFile.group;
+        showUbic(false);
         setDirty(false);
         log("be-log2", "Guardado en el commit " + c.sha.slice(0, 7) + ". El sitio se reconstruye en uno o dos minutos." + (wasNew ? "\n→ " + pageUrl(cfg.site, editFile.path) : ""));
         if (/\.md$/.test(editFile.path)) { $("be-ver").href = pageUrl(cfg.site, editFile.path); $("be-ver").style.display = "inline-block"; }
@@ -1123,12 +1322,37 @@
     loadTree();
     loadNav().catch(function () { /* sin red: quedan las secciones conocidas */ });
 
+    /* --- vista previa como en el sitio (pantalla completa) --- */
+    root.querySelectorAll("[data-previa-full]").forEach(function (b) {
+      b.addEventListener("click", function () {
+        var box = $(b.dataset.previaFull);
+        if (!box) return;
+        if (box.classList.contains("previa-full")) { cerrarPrevia(box); return; }
+        box.classList.add("previa-full");
+        var x = document.createElement("button");
+        x.type = "button"; x.className = "previa-cerrar"; x.textContent = "× Cerrar vista previa";
+        x.addEventListener("click", function () { cerrarPrevia(box); });
+        box.__cerrar = x;
+        document.body.appendChild(x);
+        document.body.style.overflow = "hidden";
+      });
+    });
+    function cerrarPrevia(box) {
+      box.classList.remove("previa-full");
+      if (box.__cerrar && box.__cerrar.parentNode) box.__cerrar.parentNode.removeChild(box.__cerrar);
+      document.body.style.overflow = "";
+    }
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") root.querySelectorAll(".be-preview.previa-full").forEach(cerrarPrevia);
+    });
+
     /* --- puente con el constructor (constructor.js) --- */
-    function openNewText(path, text, group, titulo) {
+    function openNewText(path, text, group, titulo, ubicValue) {
       root.querySelector('.be-toolbar [data-panel="editar"]').click();
       editFile = null; $("be-archivo").value = "";
-      openFile(path, text, null, true);
-      editFile.group = group; editFile.titulo = titulo;
+      if (ubicValue) ubicEditar.restore(ubicValue); else ubicEditar.set(group ? group.name : null, path.replace(/^.*\//, "").replace(/\.md$/, ""));
+      openFile(ubicEditar.path(), text, null, true);
+      editFile.titulo = titulo;
       log("be-log2", "Página lista para retocar. Guardá cuando termines.");
     }
     $("be-contenido").addEventListener("input", function () {
@@ -1156,8 +1380,11 @@
       processImage: processImage, slugify: slugify, today: today, yamlQuote: yamlQuote,
       escapeHtml: escapeHtml, renderMd: renderMd, pageUrl: pageUrl, navInsert: navInsert,
       relToImages: relToImages, fmtSize: fmtSize, utf8ToB64: utf8ToB64, b64ToUtf8: b64ToUtf8,
-      openNewText: openNewText, reloadTree: loadTree
+      openNewText: openNewText, reloadTree: loadTree,
+      navInsertAt: navInsertAt, navItems: navItems, makeUbicacion: makeUbicacion,
+      onNavLoaded: function (fn) { onNavLoaded.push(fn); }
     };
+    onNavLoaded.push(function () { ubicEditar.fillSections(); ubicEditar.refresh(); });
 
     /* --- arranque --- */
     var t = storedToken();

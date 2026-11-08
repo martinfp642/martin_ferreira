@@ -143,36 +143,27 @@
     function log(msg, err) { var el = $("bc-log"); el.textContent = msg; el.classList.toggle("err", !!err); }
     function uid() { return "b" + (nextId++) + "-" + Date.now().toString(36); }
 
-    /* --- cabecera --- */
-    function fillSections() {
-      var sel = $("bc-seccion"), prev = sel.value;
-      sel.innerHTML = "";
-      B.groups().forEach(function (g) { var o = document.createElement("option"); o.value = g.name; o.textContent = g.name; sel.appendChild(o); });
-      var n = document.createElement("option"); n.value = "__nueva__"; n.textContent = "Sección nueva…"; sel.appendChild(n);
-      if (prev) sel.value = prev;
-      if (!sel.value && B.groups().length) sel.value = B.groups()[0].name;
-    }
-    fillSections();
-    setInterval(function () { if ($("bc-seccion").options.length !== B.groups().length + 1) fillSections(); }, 2000);
-
-    function group() {
-      var v = $("bc-seccion").value;
-      if (v === "__nueva__") { var name = $("bc-seccion-nueva").value.trim(); return { name: name, folder: B.slugify(name) || "seccion", nueva: true }; }
-      return B.groups().filter(function (g) { return g.name === v; })[0] || { name: v, folder: B.slugify(v) };
-    }
-    function slug() { return B.slugify($("bc-titulo").value) || "pagina"; }
-    function pagePath() { return ORIGEN || ("docs/" + group().folder + "/" + slug() + ".md"); }
-    function updateRuta() { $("bc-ruta").textContent = pagePath(); }
-
-    ["bc-titulo", "bc-semana", "bc-seccion-nueva"].forEach(function (id) { $(id).addEventListener("input", function () { updateRuta(); changed(); }); });
-    $("bc-seccion").addEventListener("change", function () {
-      $("bc-seccion-nueva").style.display = this.value === "__nueva__" ? "block" : "none";
-      updateRuta(); changed();
+    /* --- cabecera y ubicación en el menú --- */
+    var ubic = B.makeUbicacion($("bc-ubic"), {
+      groups: function () { return B.groups(); },
+      navYaml: function () { return B.navYaml(); },
+      getTitle: function () { return $("bc-titulo").value; },
+      onChange: function () { updateRuta(); changed(); }
     });
+    B.onNavLoaded(function () { ubic.fillSections(); ubic.refresh(); updateRuta(); });
+    function fillSections() { ubic.fillSections(); }
+
+    function group() { return ubic.group(); }
+    function slug() { return ubic.slug(); }
+    function pagePath() { return ORIGEN || ubic.path(); }
+    function updateRuta() { ubic.refresh(); var r = $("bc-ruta"); if (r) r.textContent = pagePath(); }
+
+    ["bc-titulo", "bc-semana"].forEach(function (id) { $(id).addEventListener("input", function () { updateRuta(); changed(); }); });
 
     /* --- rutas de imágenes y archivos --- */
-    function imgRepoPath(im) { return "docs/images/" + group().folder + "/" + slug() + "/" + im.name; }
-    function fileRepoPath(f) { return "docs/files/" + group().folder + "/" + slug() + "/" + f.name; }
+    function carpeta() { var g = group(); return g.folder || "inicio"; }
+    function imgRepoPath(im) { return "docs/images/" + carpeta() + "/" + slug() + "/" + im.name; }
+    function fileRepoPath(f) { return "docs/files/" + carpeta() + "/" + slug() + "/" + f.name; }
     function rel(repoPath) { return B.relToImages(pagePath()) + repoPath.replace(/^docs\//, ""); }
 
     /* --- bloques --- */
@@ -218,7 +209,7 @@
           if (blocks.length && !confirm("¿Reemplazar los elementos actuales por la plantilla \u201c" + pl.nombre + "\u201d?")) return;
           blocks = [];
           ESTRUCTURAS[pl.k].forEach(function (e) { add(e[0], e[1], true); });
-          if (secciones[pl.k] && B.groups().some(function (g) { return g.name === secciones[pl.k]; })) { $("bc-seccion").value = secciones[pl.k]; $("bc-seccion").dispatchEvent(new Event("change")); }
+          if (secciones[pl.k] && B.groups().some(function (g) { return g.name === secciones[pl.k]; })) { ubic.set(secciones[pl.k]); updateRuta(); }
           grid.querySelectorAll(".bc-plantilla").forEach(function (c) { c.classList.toggle("activa", c === card); });
           render(); changed();
           log(pl.k === "vacia" ? "Página vacía: agregá elementos desde la paleta." : "Plantilla \u201c" + pl.nombre + "\u201d cargada. Completá los elementos y quitá los que no uses.");
@@ -663,7 +654,7 @@
     function md() {
       var titulo = $("bc-titulo").value.trim() || "Sin título";
       var out = ["---", "title: " + B.yamlQuote(titulo), "---", "", "# " + titulo, ""];
-      var meta = [$("bc-semana").value.trim(), group().name].filter(Boolean).join(" · ");
+      var meta = [$("bc-semana").value.trim(), group().name || ""].filter(Boolean).join(" · ");
       if (meta) out.push('<p class="meta">' + B.escapeHtml(meta) + "</p>", "");
       var partes = [];
       blocks.forEach(function (b) {
@@ -730,7 +721,7 @@
     function serialize() {
       return {
         v: 1,
-        titulo: $("bc-titulo").value, semana: $("bc-semana").value, seccion: group().name,
+        titulo: $("bc-titulo").value, semana: $("bc-semana").value, seccion: group().name, ubic: ubic.value(),
         bloques: blocks.map(function (b) {
           var d = {};
           Object.keys(b.data).forEach(function (k) {
@@ -789,11 +780,8 @@
       ORIGEN = origen || null;
       $("bc-titulo").value = d.titulo || "";
       $("bc-semana").value = d.semana || "";
-      fillSections();
-      if (d.seccion) {
-        if (B.groups().some(function (g) { return g.name === d.seccion; })) $("bc-seccion").value = d.seccion;
-        else { $("bc-seccion").value = "__nueva__"; $("bc-seccion-nueva").value = d.seccion; $("bc-seccion-nueva").style.display = "block"; }
-      }
+      if (d.ubic) ubic.restore(d.ubic);
+      else if (d.seccion !== undefined) ubic.set(d.seccion, origen ? origen.replace(/^.*\//, "").replace(/\.md$/, "") : null);
       blocks = [];
       var pending = [];
       (d.bloques || []).forEach(function (bb) {
@@ -831,7 +819,7 @@
     });
     $("bc-abrir-texto").addEventListener("click", function () {
       if (!$("bc-titulo").value.trim()) { log("Poné un título primero.", true); return; }
-      B.openNewText(pagePath(), md(), group(), $("bc-titulo").value.trim());
+      B.openNewText(pagePath(), md(), group(), $("bc-titulo").value.trim(), ubic.value());
     });
     $("bc-limpiar").addEventListener("click", function () {
       if (!confirm("¿Vaciar todos los elementos y las fotos cargadas?")) return;
@@ -849,7 +837,7 @@
       if (!blocks.length) { log("Agregá al menos un elemento.", true); return; }
       if (!B.gh.token) { log("Para publicar hace falta conectar tu cuenta (pestaña Mi cuenta). Mientras tanto podés copiar o descargar el Markdown.", true); return; }
       var g = group();
-      if (!g.name) { log("Poné el nombre de la sección nueva.", true); return; }
+      if (g.nueva && !g.name) { log("Poné el nombre de la sección nueva.", true); return; }
       var path = pagePath();
       var btn = this; btn.disabled = true; btn.textContent = "Publicando…";
       log("Revisando el repositorio…");
@@ -860,7 +848,7 @@
           (b.data.imgs || []).forEach(function (im) { if (im.bytes) files.push({ path: imgRepoPath(im), bytes: im.bytes }); });
           (b.data.files || []).forEach(function (f) { if (f.bytes) files.push({ path: fileRepoPath(f), bytes: f.bytes }); });
         });
-        var y = B.navInsert(B.navYaml(), g.name, titulo, path.replace(/^docs\//, ""));
+        var y = B.navInsertAt(B.navYaml(), ubic.insertOpts(titulo, path.replace(/^docs\//, "")));
         if (y !== B.navYaml()) files.push({ path: "mkdocs.yml", text: y });
         var msg = (exists ? "Actualizo" : "Nueva página") + ": " + titulo + "\n\nArmada desde el editor de la bitácora.";
         return B.gh.commit(files, msg, function (s) { log(s + "…"); });
