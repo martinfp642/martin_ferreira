@@ -829,7 +829,7 @@
     function renderPreview() {
       var box = $("bc-preview");
       if (!blocks.length && !$("bc-titulo").value) { box.innerHTML = '<p class="be-kv">La página se va armando acá.</p>'; return; }
-      B.renderMd(md().replace(/<!-- bloques:[^>]*-->/, ""), previewImages(), B.pageUrl(B.cfg.site, pagePath())).then(function (html) { box.innerHTML = html; })
+      B.renderMd(md().replace(/<!-- bloques:[^>]*-->/, ""), previewImages(), B.mdBase(B.cfg.site, pagePath())).then(function (html) { box.innerHTML = html; })
         .catch(function (e) { box.innerHTML = '<p class="be-kv">' + B.escapeHtml(e.message) + "</p>"; });
     }
     function changed() {

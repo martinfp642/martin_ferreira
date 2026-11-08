@@ -185,15 +185,30 @@
       '<a class="stl-descarga" download>Descargar STL</a></span>' +
       "</div>" + (pie ? '<figcaption class="stl-pie"></figcaption>' : "");
     box.querySelector(".stl-nombre").textContent = nombre;
-    box.querySelector(".stl-descarga").href = src;
+    box.querySelector(".stl-descarga").href = candidatos(src)[0];
     if (pie) box.querySelector(".stl-pie").textContent = pie;
     var lienzo = box.querySelector(".stl-lienzo"), estado = box.querySelector(".stl-estado");
     var started = false;
 
+    // Las páginas se publican como carpetas (/seccion/pagina/), así que una ruta
+    // escrita como en Markdown (../files/x.stl) necesita un nivel más. Se prueban las dos.
+    function candidatos(ruta) {
+      if (/^(https?:|\/|blob:|data:)/.test(ruta)) return [ruta];
+      var a, b;
+      try { a = new URL(ruta, location.href).href; b = new URL("../" + ruta, location.href).href; } catch (e) { return [ruta]; }
+      return a === b ? [a] : [b, a];
+    }
+    function bajar(lista) {
+      return fetch(lista[0]).then(function (r) {
+        if (r.ok) { box.querySelector(".stl-descarga").href = lista[0]; return r.arrayBuffer(); }
+        if (lista.length > 1) return bajar(lista.slice(1));
+        throw new Error("No encontré " + nombre + " (" + r.status + ")");
+      });
+    }
     function start() {
       if (started) return; started = true;
       estado.textContent = "Cargando pieza…";
-      Promise.all([loadThree(), fetch(src).then(function (r) { if (!r.ok) throw new Error("No encontré " + nombre + " (" + r.status + ")"); return r.arrayBuffer(); })])
+      Promise.all([loadThree(), bajar(candidatos(src))])
         .then(function (r) { try { build(r[0], r[1]); } catch (e) { estado.textContent = "No pude mostrar la pieza: " + e.message; estado.classList.add("error"); } })
         .catch(function (e) { estado.textContent = e.message; estado.classList.add("error"); started = false; });
     }

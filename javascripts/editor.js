@@ -97,9 +97,9 @@
         html = html.split(im.rel).join(im.url);
       });
       if (baseUrl) {
-        // Las rutas relativas (../images/…) se resuelven contra la página en el sitio
-        html = html.replace(/(<img[^>]*\ssrc=")([^"]+)(")/g, function (m, a, src, c) {
-          if (/^(https?:|blob:|data:|\/)/.test(src)) return m;
+        // Las rutas relativas (../images/…, ../files/…) se resuelven contra la página en el sitio
+        html = html.replace(/(<(?:img|iframe|a|div|figure)[^>]*\s(?:src|data-src|href)=")([^"]+)(")/g, function (m, a, src, c) {
+          if (/^(https?:|blob:|data:|\/|#|mailto:)/.test(src)) return m;
           try { return a + new URL(src, baseUrl).href + c; } catch (e) { return m; }
         });
       }
@@ -109,6 +109,13 @@
 
   function pageUrl(site, path) {
     return site + path.replace(/^docs\//, "").replace(/(^|\/)index\.md$/, "$1").replace(/\.md$/, "/");
+  }
+
+  /* Base para resolver rutas escritas como en Markdown (relativas al .md):
+     la página se publica como carpeta, así que hay que subir un nivel,
+     salvo en los index.md. */
+  function mdBase(site, path) {
+    return /(^|\/)index\.md$/.test(path) ? pageUrl(site, path) : pageUrl(site, path) + "../";
   }
 
   /* ------------------------------------------------------------------ */
@@ -1184,7 +1191,7 @@
       var md = $("be-contenido").value;
       if (!md.trim()) { box.innerHTML = '<p class="be-kv">La vista previa aparece acá mientras escribís.</p>'; return; }
       if (p && !/\.md$/i.test(p)) { box.innerHTML = '<p class="be-kv">Sin vista previa para este tipo de archivo.</p>'; return; }
-      renderMd(md, imgsEdit, p ? pageUrl(cfg.site, p) : null).then(function (html) {
+      renderMd(md, imgsEdit, p ? mdBase(cfg.site, p) : cfg.site + "x/../").then(function (html) {
         box.innerHTML = html;
         marcarImagenesRotas(box);
       }).catch(function (e) { box.innerHTML = '<p class="be-kv">' + escapeHtml(e.message) + "</p>"; });
@@ -1762,7 +1769,7 @@
       navYaml: function () { return navYaml; },
       clearNav: function () { navYaml = null; },
       processImage: processImage, slugify: slugify, today: today, yamlQuote: yamlQuote,
-      escapeHtml: escapeHtml, renderMd: renderMd, pageUrl: pageUrl, navInsert: navInsert,
+      escapeHtml: escapeHtml, renderMd: renderMd, pageUrl: pageUrl, mdBase: mdBase, navInsert: navInsert,
       relToImages: relToImages, fmtSize: fmtSize, utf8ToB64: utf8ToB64, b64ToUtf8: b64ToUtf8,
       openNewText: openNewText, reloadTree: loadTree,
       navInsertAt: navInsertAt, navItems: navItems, makeUbicacion: makeUbicacion,
