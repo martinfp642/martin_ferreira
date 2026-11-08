@@ -26,6 +26,7 @@
   <button type="button" data-panel="armar" aria-pressed="true"><span class="bc-ico">▦</span>Armar página</button>
   <button type="button" data-panel="nueva"><span class="bc-ico">☰</span>Formulario</button>
   <button type="button" data-panel="editar"><span class="bc-ico">&lt;/&gt;</span>Markdown</button>
+  <button type="button" data-panel="archivos"><span class="bc-ico">⇩</span>Archivos</button>
   <button type="button" data-panel="cuenta"><span class="bc-ico">●</span>Mi cuenta</button>
   <button type="button" data-panel="ayuda"><span class="bc-ico">?</span>Ayuda</button>
   <button type="button" class="be-status" id="be-status" title="Conectar o desconectar la cuenta">Sin conexión</button>
@@ -348,6 +349,46 @@
 
 </section>
 
+<!-- ============================ ARCHIVOS ============================ -->
+<section class="be-panel" data-panel="archivos">
+
+<p>Carpetas por módulo (MT02, MD01, FP…) dentro de <code>docs/files/</code> para archivos y <code>docs/images/</code> para fotos. Subís los materiales acá y después los referenciás desde el Markdown con el fragmento que te da cada archivo.</p>
+
+<div class="fm">
+  <aside class="fm-lado">
+    <div class="fm-titulo">Carpetas <button type="button" class="small" id="fm-recargar">Actualizar</button></div>
+    <div class="fm-carpetas" id="fm-carpetas"><p class="be-kv">Cargando…</p></div>
+    <div class="fm-nueva">
+      <div class="fm-titulo">Carpeta nueva</div>
+      <div class="be-field">
+        <label for="fm-nueva-nombre">Nombre <small>Ej.: mt02, md01, fp-final. Minúsculas sin espacios.</small></label>
+        <input type="text" id="fm-nueva-nombre" placeholder="mt02">
+      </div>
+      <label class="be-check"><input type="checkbox" id="fm-nueva-files" checked> En archivos (<code>docs/files/</code>)</label>
+      <label class="be-check"><input type="checkbox" id="fm-nueva-images" checked> En fotos (<code>docs/images/</code>)</label>
+      <div class="be-actions" style="margin:.5rem 0 0"><button type="button" class="small primary" id="fm-crear">Crear carpeta</button></div>
+    </div>
+  </aside>
+
+  <div class="fm-principal">
+    <div class="fm-titulo"><span id="fm-ruta">Elegí una carpeta</span></div>
+    <div class="be-drop" id="fm-drop">Arrastrá archivos acá para subirlos a esta carpeta, o hacé clic para elegirlos</div>
+    <input type="file" id="fm-files" multiple style="display:none">
+    <label class="be-check"><input type="checkbox" id="fm-comprimir" checked> Comprimir las fotos (máx. 1600 px) antes de subirlas</label>
+    <div class="fm-pendientes" id="fm-pendientes"></div>
+    <div class="be-actions" id="fm-acciones" style="display:none">
+      <button type="button" class="primary" id="fm-subir">Subir a la carpeta</button>
+      <button type="button" id="fm-vaciar">Quitar todos</button>
+    </div>
+    <div class="be-log" id="fm-log">Sin cuenta conectada podés ver las carpetas; para crear y subir hace falta conectarla.</div>
+    <div class="fm-titulo">Archivos en la carpeta</div>
+    <div class="fm-lista" id="fm-lista"><p class="be-kv">Elegí una carpeta a la izquierda.</p></div>
+    <p class="be-kv" id="fm-pista">Los fragmentos usan rutas para una página dentro de una sección (<code>../files/…</code>). Si la página está en el nivel principal, quitá el <code>../</code>.</p>
+  </div>
+</div>
+
+</section>
+
 <!-- ============================ MI CUENTA ============================ -->
 <section class="be-panel" data-panel="cuenta">
 
@@ -395,6 +436,13 @@
   <li>El elemento <strong>Archivos</strong> tiene dos caminos: subir el archivo al repositorio (queda en <code>docs/files/</code>; hasta 10 MB sin aviso, hasta 50 MB con confirmación) o <strong>agregar un enlace</strong> a Google Drive, YouTube u otro sitio. Para Drive: subir el archivo, <em>Compartir → Cualquier persona con el enlace</em>, copiar el enlace y pegarlo.</li>
   <li>La vista previa de la derecha muestra la página tal como va a quedar. <strong>Publicar</strong> sube la página, las fotos y los archivos en un solo commit y la agrega al menú.</li>
   <li>Una página armada así se puede volver a abrir en el constructor desde <strong>Editar archivo</strong> (botón "Abrir en Armar página").</li>
+</ul>
+
+<h3>Archivos</h3>
+<ul>
+  <li>La pestaña <strong>Archivos</strong> muestra las carpetas de <code>docs/files/</code> (archivos) y <code>docs/images/</code> (fotos). <strong>Carpeta nueva</strong> crea una por módulo, por ejemplo <code>mt02</code>, en las dos a la vez.</li>
+  <li>Elegís una carpeta, arrastrás los archivos y <strong>Subir</strong> los manda en un solo commit. Las fotos se comprimen salvo que lo desactives; los archivos de más de 10 MB piden confirmación y más de 50 MB no entran.</li>
+  <li>Cada archivo tiene <strong>Copiar</strong> (el fragmento de Markdown: imagen, visor 3D o enlace) e <strong>Insertar</strong>, que lo pega en la página abierta en Markdown con la ruta correcta.</li>
 </ul>
 
 <h3>Markdown</h3>

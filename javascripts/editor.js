@@ -339,6 +339,11 @@
       .then(function () { return true; }, function (e) { if (e.status === 404) return false; throw e; });
   };
 
+  GitHub.prototype.treeFull = function () {
+    return this.api(this.repoPath() + "/git/trees/" + this.cfg.branch + "?recursive=1")
+      .then(function (t) { return t.tree.filter(function (e) { return e.type === "blob"; }).map(function (e) { return { path: e.path, size: e.size || 0 }; }); });
+  };
+
   GitHub.prototype.tree = function () {
     return this.api(this.repoPath() + "/git/trees/" + this.cfg.branch + "?recursive=1")
       .then(function (t) { return t.tree.filter(function (e) { return e.type === "blob"; }).map(function (e) { return e.path; }); });
@@ -1322,6 +1327,177 @@
     // Sin token igual se puede explorar: el repositorio es público
     loadTree();
     loadNav().catch(function () { /* sin red: quedan las secciones conocidas */ });
+
+    /* --- gestor de archivos (pestaña Archivos) --- */
+    var fm = { carpeta: null, entradas: [], cola: [] };
+    var FM_RAICES = ["docs/files", "docs/images"];
+
+    function fmLog(msg, err) { log("fm-log", msg, err); }
+
+    function fmCargar() {
+      return gh.treeFull().then(function (entries) {
+        fm.entradas = entries.filter(function (e) { return FM_RAICES.some(function (r) { return e.path.indexOf(r + "/") === 0; }); });
+        fmDibujarCarpetas();
+        fmDibujarLista();
+      }).catch(function (e) { $("fm-carpetas").innerHTML = '<p class="be-kv">No pude leer las carpetas: ' + escapeHtml(e.message) + "</p>"; });
+    }
+
+    function fmCarpetas() {
+      var set = {};
+      FM_RAICES.forEach(function (r) { set[r] = true; });
+      fm.entradas.forEach(function (e) {
+        var parts = e.path.split("/");
+        for (var i = 2; i < parts.length; i++) set[parts.slice(0, i).join("/")] = true;
+      });
+      return Object.keys(set).sort();
+    }
+
+    function fmDibujarCarpetas() {
+      var box = $("fm-carpetas");
+      box.innerHTML = "";
+      fmCarpetas().forEach(function (c) {
+        var depth = c.split("/").length - 2;
+        var b = document.createElement("button");
+        b.type = "button";
+        b.className = "fm-carpeta" + (c === fm.carpeta ? " activa" : "");
+        b.style.paddingLeft = (0.6 + depth * 0.9) + "rem";
+        var n = fm.entradas.filter(function (e) { return dirname(e.path) === c && !/\/\.gitkeep$/.test(e.path); }).length;
+        b.innerHTML = (depth === 0 ? "▣ " : "▸ ") + escapeHtml(c.replace(/^docs\//, "")) + (n ? ' <span class="tag">' + n + "</span>" : "");
+        b.addEventListener("click", function () { fm.carpeta = c; fmDibujarCarpetas(); fmDibujarLista(); });
+        box.appendChild(b);
+      });
+    }
+
+    function fmRelPara(path) {
+      // ruta relativa desde una página dentro de una sección, o desde la página abierta en Markdown
+      var base = editFile && /^docs\//.test(editFile.path) ? relToImages(editFile.path) : "../";
+      return base + path.replace(/^docs\//, "");
+    }
+
+    function fmSnippet(path) {
+      var rel = fmRelPara(path), name = path.replace(/^.*\//, "");
+      if (/\.(jpe?g|png|gif|webp|svg)$/i.test(name)) return "![" + name.replace(/\.[^.]+$/, "").replace(/-/g, " ") + "](" + rel + ")";
+      if (/\.stl$/i.test(name)) return '<div class="stl" data-src="' + rel + '" data-nombre="' + name + '" data-pie=""></div>';
+      return "[" + name + "](" + rel + ")";
+    }
+
+    function fmDibujarLista() {
+      var box = $("fm-lista");
+      $("fm-ruta").textContent = fm.carpeta ? fm.carpeta.replace(/^docs\//, "") + "/" : "Elegí una carpeta";
+      if (!fm.carpeta) { box.innerHTML = '<p class="be-kv">Elegí una carpeta a la izquierda.</p>'; return; }
+      var files = fm.entradas.filter(function (e) { return dirname(e.path) === fm.carpeta && !/\/\.gitkeep$/.test(e.path); });
+      if (!files.length) { box.innerHTML = '<p class="be-kv">Carpeta vacía. Arrastrá archivos arriba.</p>'; return; }
+      box.innerHTML = "";
+      files.forEach(function (f) {
+        var name = f.path.replace(/^.*\//, "");
+        var row = document.createElement("div");
+        row.className = "fm-fila";
+        var esImg = /\.(jpe?g|png|gif|webp)$/i.test(name);
+        row.innerHTML =
+          (esImg ? '<img class="fm-mini" src="' + cfg.site + f.path.replace(/^docs\//, "") + '" alt="">' : '<span class="fm-mini fm-ext">' + escapeHtml((name.match(/\.([^.]+)$/) || ["", "?"])[1].toUpperCase().slice(0, 4)) + "</span>") +
+          '<span class="fm-nombre">' + escapeHtml(name) + ' <span class="tag">' + fmtSize(f.size) + "</span></span>" +
+          '<code class="fm-snippet">' + escapeHtml(fmSnippet(f.path)) + "</code>" +
+          '<span class="fm-botones"><button type="button" class="small" data-a="copiar">Copiar</button><button type="button" class="small" data-a="insertar">Insertar</button><a class="small" href="' + cfg.site + f.path.replace(/^docs\//, "") + '" target="_blank" rel="noopener">Ver</a><button type="button" class="small" data-a="borrar" title="Borrar del repositorio">×</button></span>';
+        row.querySelector('[data-a="copiar"]').addEventListener("click", function () {
+          navigator.clipboard.writeText(fmSnippet(f.path)).then(function () { fmLog("Fragmento copiado: " + fmSnippet(f.path)); }, function () { fmLog("No pude copiar; seleccioná el texto a mano.", true); });
+        });
+        row.querySelector('[data-a="insertar"]').addEventListener("click", function () {
+          if (!editFile) { fmLog("Primero abrí una página en la pestaña Markdown (o creá una nueva); el fragmento se inserta ahí.", true); return; }
+          insertAtCursor($("be-contenido"), "\n" + fmSnippet(f.path) + "\n");
+          root.querySelector('.be-toolbar [data-panel="editar"]').click();
+        });
+        row.querySelector('[data-a="borrar"]').addEventListener("click", function () {
+          if (!gh.token) { fmLog("Conectá tu cuenta para borrar.", true); return; }
+          if (!confirm("¿Borrar " + f.path + " del repositorio? Si alguna página lo usa, va a quedar un enlace roto.")) return;
+          gh.commit([{ path: f.path, remove: true }], "Borro " + f.path + "\n\nDesde el gestor de archivos de la bitácora.").then(function () {
+            fmLog("Borrado " + name + "."); return fmCargar();
+          }).catch(function (e) { fmLog("No se borró: " + e.message, true); });
+        });
+        box.appendChild(row);
+      });
+    }
+
+    $("fm-recargar").addEventListener("click", function () { fmCargar().then(function () { fmLog("Carpetas actualizadas."); }); });
+
+    $("fm-crear").addEventListener("click", function () {
+      var name = slugify($("fm-nueva-nombre").value);
+      if (!name) { fmLog("Poné un nombre para la carpeta.", true); return; }
+      if (!gh.token) { fmLog("Conectá tu cuenta (pestaña Mi cuenta) para crear carpetas.", true); return; }
+      var files = [];
+      if ($("fm-nueva-files").checked) files.push({ path: "docs/files/" + name + "/.gitkeep", text: "" });
+      if ($("fm-nueva-images").checked) files.push({ path: "docs/images/" + name + "/.gitkeep", text: "" });
+      if (!files.length) { fmLog("Marcá al menos una ubicación.", true); return; }
+      var btn = this; btn.disabled = true;
+      gh.commit(files, "Carpeta nueva: " + name + "\n\nDesde el gestor de archivos de la bitácora.").then(function () {
+        fmLog("Carpeta " + name + " creada. Elegila a la izquierda para subir archivos.");
+        $("fm-nueva-nombre").value = "";
+        return fmCargar().then(function () { fm.carpeta = ($("fm-nueva-files").checked ? "docs/files/" : "docs/images/") + name; fmDibujarCarpetas(); fmDibujarLista(); });
+      }).catch(function (e) { fmLog("No se creó: " + e.message, true); }).then(function () { btn.disabled = false; });
+    });
+
+    /* cola de subida */
+    function fmDibujarCola() {
+      var box = $("fm-pendientes");
+      box.innerHTML = "";
+      fm.cola.forEach(function (it, i) {
+        var row = document.createElement("div");
+        row.className = "fm-fila fm-pendiente";
+        row.innerHTML = (it.url ? '<img class="fm-mini" src="' + it.url + '" alt="">' : '<span class="fm-mini fm-ext">' + escapeHtml((it.name.match(/\.([^.]+)$/) || ["", "?"])[1].toUpperCase().slice(0, 4)) + "</span>") +
+          '<span class="fm-nombre">' + escapeHtml(it.name) + ' <span class="tag">' + fmtSize(it.bytes.length) + (it.original && it.original !== it.bytes.length ? " · antes " + fmtSize(it.original) : "") + "</span></span>" +
+          '<span class="fm-botones"><button type="button" class="small">×</button></span>';
+        row.querySelector("button").addEventListener("click", function () { fm.cola.splice(i, 1); fmDibujarCola(); });
+        box.appendChild(row);
+      });
+      $("fm-acciones").style.display = fm.cola.length ? "flex" : "none";
+    }
+
+    function fmAgregar(files) {
+      if (!fm.carpeta) { fmLog("Primero elegí la carpeta de destino a la izquierda.", true); return; }
+      Array.prototype.forEach.call(files, function (file) {
+        if (file.size > 50 * 1024 * 1024) { alert(file.name + " pesa " + fmtSize(file.size) + ". Más de 50 MB no entra en el repositorio: subilo a Google Drive y enlazalo."); return; }
+        if (file.size > 10 * 1024 * 1024 && !confirm(file.name + " pesa " + fmtSize(file.size) + ". La guía pide consultar antes de subir más de 10 MB. ¿Subirlo igual?")) return;
+        var esImg = /^image\//.test(file.type) && !/gif|svg/.test(file.type);
+        var p = esImg && $("fm-comprimir").checked
+          ? processImage(file).then(function (im) { return { name: im.name, bytes: im.bytes, url: im.url, original: file.size }; })
+          : file.arrayBuffer().then(function (buf) {
+              var name = slugify(file.name.replace(/\.[^.]+$/, "")) + (file.name.match(/\.[^.]+$/) || [""])[0].toLowerCase();
+              return { name: name, bytes: new Uint8Array(buf), url: /^image\//.test(file.type) ? URL.createObjectURL(file) : null };
+            });
+        p.then(function (it) {
+          if (fm.cola.some(function (x) { return x.name === it.name; })) it.name = it.name.replace(/(\.[^.]+)$/, "-" + Date.now().toString(36) + "$1");
+          fm.cola.push(it); fmDibujarCola();
+        }).catch(function (e) { alert(e.message); });
+      });
+    }
+
+    (function () {
+      var drop = $("fm-drop"), input = $("fm-files");
+      drop.addEventListener("click", function () { input.click(); });
+      drop.addEventListener("dragover", function (e) { e.preventDefault(); drop.classList.add("over"); });
+      drop.addEventListener("dragleave", function () { drop.classList.remove("over"); });
+      drop.addEventListener("drop", function (e) { e.preventDefault(); drop.classList.remove("over"); fmAgregar(e.dataTransfer.files); });
+      input.addEventListener("change", function () { fmAgregar(input.files); input.value = ""; });
+    })();
+
+    $("fm-vaciar").addEventListener("click", function () { fm.cola = []; fmDibujarCola(); });
+
+    $("fm-subir").addEventListener("click", function () {
+      if (!fm.cola.length || !fm.carpeta) return;
+      if (!gh.token) { fmLog("Conectá tu cuenta (pestaña Mi cuenta) para subir.", true); return; }
+      var btn = this; btn.disabled = true;
+      var existentes = fm.entradas.map(function (e) { return e.path; });
+      var files = fm.cola.map(function (it) { return { path: fm.carpeta + "/" + it.name, bytes: it.bytes }; });
+      var repetidos = files.filter(function (f) { return existentes.indexOf(f.path) >= 0; }).map(function (f) { return f.path.replace(/^.*\//, ""); });
+      if (repetidos.length && !confirm("Ya existen en la carpeta: " + repetidos.join(", ") + ". ¿Reemplazarlos?")) { btn.disabled = false; return; }
+      var msg = "Subo " + files.length + (files.length === 1 ? " archivo a " : " archivos a ") + fm.carpeta.replace(/^docs\//, "") + "\n\n" + files.map(function (f) { return "- " + f.path.replace(/^.*\//, ""); }).join("\n") + "\n\nDesde el gestor de archivos de la bitácora.";
+      gh.commit(files, msg, function (s) { fmLog(s + "…"); }).then(function (c) {
+        fmLog("Subidos en el commit " + c.sha.slice(0, 7) + ". Ya podés copiar o insertar sus fragmentos desde la lista. El sitio los sirve en uno o dos minutos.");
+        fm.cola = []; fmDibujarCola();
+        return fmCargar();
+      }).catch(function (e) { fmLog("No se subió: " + e.message, true); }).then(function () { btn.disabled = false; });
+    });
+
+    fmCargar();
 
     /* --- vista previa como en el sitio (pantalla completa) --- */
     root.querySelectorAll("[data-previa-full]").forEach(function (b) {
