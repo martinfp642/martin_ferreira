@@ -239,3 +239,64 @@ body.app {
   .fm-fila { grid-template-columns: 3rem 1fr auto; }
   .fm-snippet { grid-column: 1 / -1; }
 }
+
+/* Panel Materiales (pestaña Markdown) y selector del repositorio */
+.mat {
+  display: none;
+  border: 2px solid #000;
+  margin: 0 0 0.8rem;
+  background: #fff;
+}
+
+.mat.abierto { display: block; }
+
+.mat-cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.7rem;
+  border-bottom: 2px solid #000;
+  background: #f5f5f5;
+}
+
+.mat-titulo {
+  font-size: 0.6rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  margin-right: 0.4rem;
+}
+
+.be .mat-cabecera select { width: auto; min-width: 16rem; font-size: 0.7rem; padding: 0.4em 0.6em; }
+.mat-cabecera #mat-cerrar { margin-left: auto; }
+
+.mat-lista {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+  gap: 2px;
+  padding: 2px;
+  max-height: 18rem;
+  overflow: auto;
+}
+
+.mat-lista > p { grid-column: 1 / -1; margin: 0.6rem 0.8rem; }
+
+.mat-item {
+  display: grid;
+  grid-template-columns: 3rem 1fr;
+  gap: 0.4rem 0.6rem;
+  align-items: center;
+  outline: 1px solid #000;
+  outline-offset: -0.5px;
+  padding: 0.45rem 0.6rem;
+}
+
+.mat-mini { width: 3rem; height: 2.25rem; object-fit: cover; border: 1px solid #000; display: block; }
+.mat-nombre { font-size: 0.66rem; font-weight: 700; word-break: break-all; }
+.mat-botones { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 0.25rem; }
+
+.sel-item { grid-template-columns: auto 3rem 1fr; cursor: pointer; }
+.sel-item input { width: 1rem; height: 1rem; accent-color: #000; }
+.sel-item:has(input:checked) { background: #f5f5f5; outline-width: 2px; }
+.sel-lista { max-height: 50vh; margin-top: 0.4rem; }

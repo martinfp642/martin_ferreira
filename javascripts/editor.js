@@ -1353,6 +1353,7 @@
         fm.entradas = entries.filter(function (e) { return FM_RAICES.some(function (r) { return e.path.indexOf(r + "/") === 0; }); });
         fmDibujarCarpetas();
         fmDibujarLista();
+        if (typeof matFill === "function") matFill();
       }).catch(function (e) { $("fm-carpetas").innerHTML = '<p class="be-kv">No pude leer las carpetas: ' + escapeHtml(e.message) + "</p>"; });
     }
 
@@ -1511,7 +1512,165 @@
       }).catch(function (e) { fmLog("No se subió: " + e.message, true); }).then(function () { btn.disabled = false; });
     });
 
-    fmCargar();
+    /* --- materiales: módulos (carpetas) con sus archivos --- */
+    function tipoDe(path) {
+      if (/\.(jpe?g|png|gif|webp|svg)$/i.test(path)) return "imagen";
+      if (/\.stl$/i.test(path)) return "stl";
+      return "archivo";
+    }
+    function modulos() {
+      var map = {};
+      fm.entradas.forEach(function (e) {
+        if (/\/\.gitkeep$/.test(e.path)) return;
+        var m = e.path.match(/^docs\/(files|images)\/(.+)\/[^/]+$/);
+        if (!m) return;
+        var k = m[2];
+        (map[k] = map[k] || []).push({ path: e.path, size: e.size, tipo: tipoDe(e.path), name: e.path.replace(/^.*\//, "") });
+      });
+      return Object.keys(map).sort().map(function (k) { return { nombre: k, items: map[k].sort(function (a, b) { return a.path < b.path ? -1 : 1; }) }; });
+    }
+    function matRel(path) { return fmRelPara(path); }
+    function matFragmento(it, formato) {
+      var rel = matRel(it.path), base = it.name.replace(/\.[^.]+$/, "").replace(/-/g, " ");
+      switch (formato) {
+        case "figura": return "<figure markdown>\n  ![" + base + "](" + rel + ")\n  <figcaption>" + base + "</figcaption>\n</figure>";
+        case "linea": return "![" + base + "](" + rel + ")";
+        case "hero": return '<figure class="hero-shot" markdown>\n![' + base + "](" + rel + ")\n</figure>";
+        case "stl": return '<div class="stl" data-src="' + rel + '" data-nombre="' + it.name + '" data-pie=""></div>';
+        default: return "[" + it.name + "](" + rel + ")" + (it.tipo === "stl" ? " · archivo STL para imprimir" : "");
+      }
+    }
+    function matBorrador(mod) {
+      var imgs = mod.items.filter(function (i) { return i.tipo === "imagen"; });
+      var stls = mod.items.filter(function (i) { return i.tipo === "stl"; });
+      var otros = mod.items.filter(function (i) { return i.tipo === "archivo"; });
+      var titulo = mod.nombre.replace(/-/g, " ").replace(/^\w/, function (c) { return c.toUpperCase(); });
+      var out = ["---", "title: " + yamlQuote(titulo), "---", "", "# " + titulo, "", '<p class="meta">' + escapeHtml(mod.nombre.toUpperCase()) + " · " + today() + "</p>", "",
+        "## Objetivo", "", "_Qué quería lograr y por qué._", ""];
+      if (imgs.length) {
+        out.push("## Proceso", "", "_Qué hice, paso a paso. Cambiá los pies de foto._", "");
+        if (imgs.length >= 2) { out.push('<div class="carrete" markdown>', ""); imgs.forEach(function (i) { out.push(matFragmento(i, "linea")); }); out.push("", "</div>", ""); }
+        else out.push(matFragmento(imgs[0], "figura"), "");
+      }
+      out.push("## Resultados", "", '<span class="ok">éxito</span> _…_', "", '<span class="fail">falló</span> _…_', "");
+      if (stls.length) { out.push("## Pieza 3D", ""); stls.forEach(function (i) { out.push(matFragmento(i, "stl"), "", "- " + matFragmento(i, "enlace"), ""); }); }
+      if (otros.length) { out.push("## Archivos", ""); otros.forEach(function (i) { out.push("- " + matFragmento(i, "enlace")); }); out.push(""); }
+      out.push("## Reflexión", "", "_Qué aprendí. Qué haría distinto._", "", "## Atribución y uso de IA", "", "_Fuentes, licencias, ayuda recibida._", "");
+      return out.join("\n");
+    }
+
+    var matBox = $("be-mat");
+    function matFill() {
+      var sel = $("mat-modulo"), prev = sel.value;
+      sel.innerHTML = '<option value="">Elegí una carpeta / módulo…</option>';
+      modulos().forEach(function (m) {
+        var o = document.createElement("option"); o.value = m.nombre; o.textContent = m.nombre + " · " + m.items.length + (m.items.length === 1 ? " archivo" : " archivos"); sel.appendChild(o);
+      });
+      if (prev) sel.value = prev;
+      matLista();
+    }
+    function matLista() {
+      var box = $("mat-lista"), nombre = $("mat-modulo").value;
+      var mod = modulos().filter(function (m) { return m.nombre === nombre; })[0];
+      if (!mod) { box.innerHTML = '<p class="be-kv">Elegí una carpeta para ver sus archivos. Cada botón inserta el fragmento en el cursor con la ruta correcta para esta página.</p>'; return; }
+      box.innerHTML = "";
+      mod.items.forEach(function (it) {
+        var card = document.createElement("div");
+        card.className = "mat-item";
+        var url = cfg.site + it.path.replace(/^docs\//, "");
+        card.innerHTML =
+          (it.tipo === "imagen" ? '<img class="mat-mini" src="' + url + '" alt="">' : '<span class="mat-mini fm-ext">' + escapeHtml((it.name.match(/\.([^.]+)$/) || ["", "?"])[1].toUpperCase().slice(0, 4)) + "</span>") +
+          '<span class="mat-nombre">' + escapeHtml(it.name) + ' <span class="tag">' + fmtSize(it.size) + "</span></span>" +
+          '<span class="mat-botones"></span>';
+        var btns = card.querySelector(".mat-botones");
+        var formatos = it.tipo === "imagen" ? [["figura", "Imagen"], ["linea", "Carrete / galería"], ["hero", "Hero shot"]] : it.tipo === "stl" ? [["stl", "Visor 3D"], ["enlace", "Enlace"]] : [["enlace", "Enlace"]];
+        formatos.forEach(function (f) {
+          var b = document.createElement("button"); b.type = "button"; b.className = "small"; b.textContent = f[1];
+          b.addEventListener("click", function () {
+            if (!editFile) { log("be-log2", "Abrí o creá una página primero; el fragmento se inserta en el cursor.", true); return; }
+            insertAtCursor($("be-contenido"), "\n" + matFragmento(it, f[0]) + "\n");
+          });
+          btns.appendChild(b);
+        });
+        box.appendChild(card);
+      });
+    }
+    $("be-mat-toggle").addEventListener("click", function () {
+      var on = matBox.classList.toggle("abierto");
+      this.setAttribute("aria-pressed", on ? "true" : "false");
+      if (on) { matFill(); if (!fm.entradas.length) fmCargar().then(matFill); }
+    });
+    $("mat-cerrar").addEventListener("click", function () { matBox.classList.remove("abierto"); $("be-mat-toggle").setAttribute("aria-pressed", "false"); });
+    $("mat-modulo").addEventListener("change", matLista);
+    $("mat-ir-archivos").addEventListener("click", function () {
+      var nombre = $("mat-modulo").value;
+      root.querySelector('.be-toolbar [data-panel="archivos"]').click();
+      if (nombre) { var c = fmCarpetas().filter(function (x) { return x === "docs/images/" + nombre || x === "docs/files/" + nombre; })[0]; if (c) { fm.carpeta = c; fmDibujarCarpetas(); fmDibujarLista(); } }
+    });
+    $("mat-borrador").addEventListener("click", function () {
+      var nombre = $("mat-modulo").value;
+      var mod = modulos().filter(function (m) { return m.nombre === nombre; })[0];
+      if (!mod) { log("be-log2", "Elegí primero la carpeta del módulo.", true); return; }
+      if (dirty && !confirm("Hay cambios sin guardar. ¿Reemplazarlos por el borrador?")) return;
+      $("be-np").style.display = "none"; $("be-archivo").value = ""; editFile = null;
+      var g = groups.filter(function (x) { return nombre.indexOf(x.folder) === 0; })[0];
+      ubicEditar.set(g ? g.name : (groups[0] ? groups[0].name : null), nombre);
+      openFile(ubicEditar.path(), matBorrador(mod), null, true);
+      log("be-log2", "Borrador armado con " + mod.items.length + " archivos de " + nombre + ". Completá los textos en cursiva, revisá la ubicación en el menú y guardá.");
+      $("be-contenido").focus();
+    });
+    $("be-contenido").addEventListener("focus", function () { if (matBox.classList.contains("abierto")) matLista(); });
+
+    /* selector de material para el constructor */
+    function elegirMaterial(opts, cb) {
+      var ov = document.createElement("div");
+      ov.className = "bc-ajuste";
+      ov.innerHTML = '<div class="bc-ajuste-caja"><div class="bc-ajuste-titulo">Elegir del repositorio <span class="bc-ajuste-nombre">' + (opts.tipo === "imagen" ? "fotos" : opts.tipo === "stl" ? "piezas STL" : "archivos") + "</span></div>" +
+        '<div class="be-field"><label>Carpeta / módulo</label><select class="sel-mod"></select></div>' +
+        '<div class="mat-lista sel-lista"></div>' +
+        '<div class="be-actions"><button type="button" class="primary" data-act="ok">Usar seleccionados</button><button type="button" data-act="no">Cancelar</button></div></div>';
+      document.body.appendChild(ov);
+      var sel = ov.querySelector(".sel-mod"), lista = ov.querySelector(".sel-lista"), elegidos = {};
+      function dibujar() {
+        var mod = modulos().filter(function (m) { return m.nombre === sel.value; })[0];
+        lista.innerHTML = "";
+        if (!mod) return;
+        mod.items.filter(function (i) { return !opts.tipo || i.tipo === opts.tipo || (opts.tipo === "archivo"); }).forEach(function (it) {
+          var card = document.createElement("label");
+          card.className = "mat-item sel-item";
+          var url = cfg.site + it.path.replace(/^docs\//, "");
+          card.innerHTML = '<input type="' + (opts.multiple ? "checkbox" : "radio") + '" name="sel">' +
+            (it.tipo === "imagen" ? '<img class="mat-mini" src="' + url + '" alt="">' : '<span class="mat-mini fm-ext">' + escapeHtml((it.name.match(/\.([^.]+)$/) || ["", "?"])[1].toUpperCase().slice(0, 4)) + "</span>") +
+            '<span class="mat-nombre">' + escapeHtml(it.name) + ' <span class="tag">' + fmtSize(it.size) + "</span></span>";
+          card.querySelector("input").addEventListener("change", function () {
+            if (!opts.multiple) elegidos = {};
+            if (this.checked) elegidos[it.path] = it; else delete elegidos[it.path];
+          });
+          lista.appendChild(card);
+        });
+      }
+      function fill() {
+        sel.innerHTML = '<option value="">Elegí una carpeta…</option>';
+        modulos().forEach(function (m) {
+          var n = m.items.filter(function (i) { return !opts.tipo || i.tipo === opts.tipo || opts.tipo === "archivo"; }).length;
+          if (!n) return;
+          var o = document.createElement("option"); o.value = m.nombre; o.textContent = m.nombre + " · " + n; sel.appendChild(o);
+        });
+      }
+      fill();
+      if (!fm.entradas.length) fmCargar().then(fill);
+      sel.addEventListener("change", dibujar);
+      function close() { if (ov.parentNode) ov.parentNode.removeChild(ov); }
+      ov.addEventListener("click", function (e) { if (e.target === ov) close(); });
+      ov.querySelector('[data-act="no"]').addEventListener("click", close);
+      ov.querySelector('[data-act="ok"]').addEventListener("click", function () {
+        var items = Object.keys(elegidos).map(function (k) { return elegidos[k]; });
+        close();
+        if (items.length) cb(items.map(function (it) { return { path: it.path, name: it.name, size: it.size, url: cfg.site + it.path.replace(/^docs\//, ""), tipo: it.tipo }; }));
+      });
+    }
+
+    fmCargar().then(matFill);
 
     /* --- vista previa como en el sitio (pantalla completa) --- */
     root.querySelectorAll("[data-previa-full]").forEach(function (b) {
@@ -1573,6 +1732,7 @@
       relToImages: relToImages, fmtSize: fmtSize, utf8ToB64: utf8ToB64, b64ToUtf8: b64ToUtf8,
       openNewText: openNewText, reloadTree: loadTree,
       navInsertAt: navInsertAt, navItems: navItems, makeUbicacion: makeUbicacion,
+      elegirMaterial: elegirMaterial,
       onNavLoaded: function (fn) { onNavLoaded.push(fn); }
     };
     onNavLoaded.push(function () { ubicEditar.fillSections(); ubicEditar.refresh(); });

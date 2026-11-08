@@ -279,6 +279,17 @@
 
 <div class="be-ubic" id="be-ubic-editar" style="display:none"></div>
 
+<div class="mat" id="be-mat">
+  <div class="mat-cabecera">
+    <span class="mat-titulo">Materiales</span>
+    <select id="mat-modulo"><option value="">Elegí una carpeta / módulo…</option></select>
+    <button type="button" class="small" id="mat-borrador" title="Arma un borrador de página con todo el material de la carpeta">Armar borrador con todo</button>
+    <button type="button" class="small" id="mat-ir-archivos">Subir más archivos</button>
+    <button type="button" class="small" id="mat-cerrar">Cerrar</button>
+  </div>
+  <div class="mat-lista" id="mat-lista"><p class="be-kv">Elegí una carpeta para ver sus archivos. Cada botón inserta el fragmento en el cursor con la ruta correcta para esta página.</p></div>
+</div>
+
 <div class="be-tb" id="be-tb">
   <div class="be-tb-group" data-help="Formato">
     <button type="button" data-fmt="bold" title="Negrita (Ctrl+B)"><b>B</b></button>
@@ -291,6 +302,9 @@
     <button type="button" data-fmt="code" title="Código">&lt;/&gt;</button>
     <button type="button" data-fmt="quote" title="Cita">“ Cita</button>
     <button type="button" data-fmt="table" title="Tabla">Tabla</button>
+  </div>
+  <div class="be-tb-group" data-help="Material">
+    <button type="button" id="be-mat-toggle" title="Archivos y fotos ya subidos, listos para insertar">Materiales ▾</button>
   </div>
   <div class="be-tb-group" data-help="Bloques">
     <button type="button" data-block="carrete" title="Carrusel de fotos">Carrete</button>
@@ -443,6 +457,8 @@
   <li>La pestaña <strong>Archivos</strong> muestra las carpetas de <code>docs/files/</code> (archivos) y <code>docs/images/</code> (fotos). <strong>Carpeta nueva</strong> crea una por módulo, por ejemplo <code>mt02</code>, en las dos a la vez.</li>
   <li>Elegís una carpeta, arrastrás los archivos y <strong>Subir</strong> los manda en un solo commit. Las fotos se comprimen salvo que lo desactives; los archivos de más de 10 MB piden confirmación y más de 50 MB no entran.</li>
   <li>Cada archivo tiene <strong>Copiar</strong> (el fragmento de Markdown: imagen, visor 3D o enlace) e <strong>Insertar</strong>, que lo pega en la página abierta en Markdown con la ruta correcta.</li>
+  <li>En la pestaña Markdown, el botón <strong>Materiales</strong> abre el mismo contenido sin cambiar de pestaña: elegís la carpeta del módulo y cada archivo ofrece sus formatos (imagen con pie, línea para carrete o galería, enlace, visor 3D). <strong>Armar borrador con todo</strong> crea una página nueva con todas las fotos en un carrete, las piezas 3D en su visor y los demás archivos como enlaces.</li>
+  <li>En Armar página, los elementos con fotos o piezas 3D tienen <strong>Elegir del repositorio</strong> para usar material ya subido sin volver a cargarlo.</li>
 </ul>
 
 <h3>Markdown</h3>

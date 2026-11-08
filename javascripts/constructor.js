@@ -164,8 +164,8 @@
 
     /* --- rutas de imágenes y archivos --- */
     function carpeta() { var g = group(); return g.folder || "inicio"; }
-    function imgRepoPath(im) { return "docs/images/" + carpeta() + "/" + slug() + "/" + im.name; }
-    function fileRepoPath(f) { return "docs/files/" + carpeta() + "/" + slug() + "/" + f.name; }
+    function imgRepoPath(im) { return im.fijo && im.repoPath ? im.repoPath : "docs/images/" + carpeta() + "/" + slug() + "/" + im.name; }
+    function fileRepoPath(f) { return f.fijo && f.repoPath ? f.repoPath : "docs/files/" + carpeta() + "/" + slug() + "/" + f.name; }
     function rel(repoPath) { return B.relToImages(pagePath()) + repoPath.replace(/^docs\//, ""); }
 
     /* --- bloques --- */
@@ -384,7 +384,18 @@
         drop.style.display = max && b.data.imgs.length >= max ? "none" : "block";
       }
       renderImgs();
-      box.appendChild(grid); box.appendChild(drop); box.appendChild(fi);
+      var elegir = el("button", "small", "Elegir del repositorio"); elegir.type = "button";
+      elegir.addEventListener("click", function () {
+        B.elegirMaterial({ tipo: "imagen", multiple: max !== 1 }, function (items) {
+          items.forEach(function (it) {
+            if (max && b.data.imgs.length >= max) return;
+            if (b.data.imgs.some(function (x) { return x.repoPath === it.path; })) return;
+            b.data.imgs.push({ id: uid(), name: it.name, caption: labels && labels[b.data.imgs.length] ? labels[b.data.imgs.length] : it.name.replace(/\.[^.]+$/, "").replace(/-/g, " "), bytes: null, url: it.url, repoPath: it.path, fijo: true });
+          });
+          renderImgs(); changed();
+        });
+      });
+      box.appendChild(grid); box.appendChild(drop); box.appendChild(elegir); box.appendChild(fi);
       return box;
     }
 
@@ -485,7 +496,17 @@
         });
       }
       draw();
-      box.appendChild(list); box.appendChild(drop); box.appendChild(fi); box.appendChild(linkBox); box.appendChild(linkHint);
+      var elegir = el("button", "small", "Elegir del repositorio"); elegir.type = "button";
+      elegir.addEventListener("click", function () {
+        B.elegirMaterial({ tipo: "archivo", multiple: true }, function (items) {
+          items.forEach(function (it) {
+            if (b.data.files.some(function (x) { return x.repoPath === it.path; })) return;
+            b.data.files.push({ id: uid(), name: it.name, desc: "", bytes: null, repoPath: it.path, fijo: true });
+          });
+          draw(); changed();
+        });
+      });
+      box.appendChild(list); box.appendChild(drop); box.appendChild(elegir); box.appendChild(fi); box.appendChild(linkBox); box.appendChild(linkHint);
       return box;
     }
 
@@ -524,7 +545,15 @@
         drop.style.display = b.data.files.length ? "none" : "block";
       }
       draw();
-      box.appendChild(list); box.appendChild(drop); box.appendChild(fi);
+      var elegir = el("button", "small", "Elegir del repositorio"); elegir.type = "button";
+      elegir.addEventListener("click", function () {
+        B.elegirMaterial({ tipo: "stl", multiple: false }, function (items) {
+          var it = items[0];
+          b.data.files = [{ id: uid(), name: it.name, desc: "", bytes: null, url: it.url, repoPath: it.path, fijo: true }];
+          draw(); changed();
+        });
+      });
+      box.appendChild(list); box.appendChild(drop); box.appendChild(elegir); box.appendChild(fi);
       return box;
     }
 
@@ -779,8 +808,8 @@
         bloques: blocks.map(function (b) {
           var d = {};
           Object.keys(b.data).forEach(function (k) {
-            if (k === "imgs") d.imgs = b.data.imgs.map(function (im) { return { name: im.name, caption: im.caption || "", repoPath: imgRepoPath(im) }; });
-            else if (k === "files") d.files = b.data.files.map(function (f) { return (f.url && !/^blob:/.test(f.url) && !f.bytes && b.type !== "pieza3d") ? { name: f.name, desc: f.desc || "", url: f.url } : { name: f.name, desc: f.desc || "", repoPath: fileRepoPath(f) }; });
+            if (k === "imgs") d.imgs = b.data.imgs.map(function (im) { return { name: im.name, caption: im.caption || "", repoPath: imgRepoPath(im), fijo: !!im.fijo }; });
+            else if (k === "files") d.files = b.data.files.map(function (f) { return (f.url && !/^blob:/.test(f.url) && !f.bytes && !f.fijo && b.type !== "pieza3d") ? { name: f.name, desc: f.desc || "", url: f.url } : { name: f.name, desc: f.desc || "", repoPath: fileRepoPath(f), fijo: !!f.fijo }; });
             else d[k] = b.data[k];
           });
           return { type: b.type, data: d, open: b.open !== false };
@@ -848,13 +877,14 @@
         Object.keys(bb.data).forEach(function (k) {
           if (k === "imgs") {
             b.data.imgs = bb.data.imgs.map(function (im) {
-              var o = { id: im.id || uid(), name: im.name, caption: im.caption || "", bytes: null, url: im.url || (B.cfg.site + (im.repoPath || "").replace(/^docs\//, "")), type: im.type };
+              var o = { id: im.id || uid(), name: im.name, caption: im.caption || "", bytes: null, url: im.url || (B.cfg.site + (im.repoPath || "").replace(/^docs\//, "")), type: im.type, repoPath: im.repoPath, fijo: !!im.fijo };
               if (fromDraft && im.hasBytes) pending.push(idbGet(o.id).then(function (r) { if (r) { o.bytes = r.bytes; o.url = URL.createObjectURL(new Blob([r.bytes], { type: r.type })); } }));
               return o;
             });
           } else if (k === "files") {
             b.data.files = bb.data.files.map(function (f) {
-              var o = { id: f.id || uid(), name: f.name, desc: f.desc || "", bytes: null, repoPath: f.repoPath, url: f.url || null };
+              var o = { id: f.id || uid(), name: f.name, desc: f.desc || "", bytes: null, repoPath: f.repoPath, url: f.url || null, fijo: !!f.fijo };
+              if (o.fijo && b.type === "pieza3d" && !o.url) o.url = B.cfg.site + (o.repoPath || "").replace(/^docs\//, "");
               if (fromDraft && f.hasBytes) pending.push(idbGet(o.id).then(function (r) { if (r) { o.bytes = r.bytes; if (/\.stl$/i.test(o.name)) o.url = URL.createObjectURL(new Blob([r.bytes], { type: "model/stl" })); } }));
               return o;
             });
@@ -915,6 +945,8 @@
         blocks.forEach(function (b) {
           (b.data.imgs || []).forEach(function (im) { im.bytes = null; });
           (b.data.files || []).forEach(function (f) { if (f.bytes) { f.bytes = null; if (b.type === "pieza3d") f.url = B.cfg.site + fileRepoPath(f).replace(/^docs\//, ""); } });
+          (b.data.imgs || []).forEach(function (im) { if (!im.fijo) { im.repoPath = imgRepoPath(im); im.fijo = true; } });
+          (b.data.files || []).forEach(function (f) { if (!f.fijo && !f.url) { f.repoPath = fileRepoPath(f); f.fijo = true; } });
         });
         idbClear(); saveDraft(); render();
         log("Publicado en el commit " + c.sha.slice(0, 7) + ". GitHub Actions reconstruye el sitio en uno o dos minutos.\n→ " + B.pageUrl(B.cfg.site, path) + "\n→ https://github.com/" + B.cfg.owner + "/" + B.cfg.repo + "/actions");
